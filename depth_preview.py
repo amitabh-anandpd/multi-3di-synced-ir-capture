@@ -1,6 +1,6 @@
 """M3b throwaway: one frame of one camera -> stereo depth -> .ply point cloud.
 
-  python depth_preview.py sessions/<session> --cam cam_A [--frame N]
+  python depth_preview.py [sessions/<session>] --cam cam_A [--frame N]   (default: newest session)
 
 Undistorts both fisheye views into one shared virtual pinhole camera using the
 saved distortion map. The two imagers are parallel, offset only along x
@@ -10,6 +10,7 @@ Writes <session>/<cam>/preview/ : rectified L/R, disparity PNG, points.ply.
 """
 import argparse
 import csv
+import glob
 import json
 import os
 
@@ -40,7 +41,7 @@ def write_ply(path, xyz, gray):
 
 
 ap = argparse.ArgumentParser()
-ap.add_argument("session")
+ap.add_argument("session", nargs="?", help="session folder (default: newest in sessions/)")
 ap.add_argument("--cam", default="cam_A")
 ap.add_argument("--frame", type=int, help="row in frames.csv (default: middle)")
 ap.add_argument("--size", type=int, default=400, help="rectified image size, px")
@@ -50,6 +51,9 @@ ap.add_argument("--zmin", type=float, default=80, help="mm")
 ap.add_argument("--zmax", type=float, default=1000, help="mm")
 ap.add_argument("--min-gray", type=int, default=25, help="skip pixels darker than this (not lit by the IR LEDs)")
 args = ap.parse_args()
+if args.session is None:
+    args.session = max(glob.glob(os.path.join("sessions", "20*")))  # names sort by time
+    print("session:", args.session)
 
 cam_dir = os.path.join(args.session, args.cam)
 meta = json.load(open(os.path.join(args.session, "session.json")))

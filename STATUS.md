@@ -24,7 +24,12 @@ Disk: ~0.85 GB per camera per minute (PNG level 1).
   Baselines from the extrinsics: cam_A 63.86 mm, cam_B 65.75 mm. Device-info baselines are rounded (63 / 65 mm).
 - LeapC's `K` and `D` don't behave as a pixel-space OpenCV model (f ≈ 1.28, c ≈ −2). They're saved but not used.
 - First desk scene: an arm at ~31 cm came out as a clean surface. Dark or far areas have no IR return, so no depth.
-- Known-size object check: pending.
+- Hand (cam_B, `sessions/2026-10-26_032559`, `--zmin 150 --zmax 600 --min-gray 40` + Open3D statistical
+  outlier removal): palm, four fingers and thumb come out as one dense, clean surface. Skin under the IR
+  LEDs matches well; smooth white plastic and the plain desk match poorly (9–16 % of pixels valid per frame).
+- Limits seen: nothing closer than ~103 mm (128 px max disparity), the left 128 px columns never get depth
+  (SGBM), and far/dark areas have no IR return.
+- Known-size object check: pending (measure the hand cloud in CloudCompare against a ruler).
 
 ## Measured
 2026-10-26, SDK 6.2.0, 2 × 3Di, 10 s runs:
@@ -57,3 +62,5 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
 - 2026-10-26: M2 passed. Names stayed stable after unplugging and swapping the ports.
 - 2026-10-26: M3 passed after cam_B's USB fault was fixed (reseat + restart). 60 s, 0 drops on both cameras.
 - 2026-10-26: M3b pipeline working. Known-object size check pending.
+- 2026-10-26: First clean hand point cloud from cam_B. cam_A not detected in this sitting.
+  `depth_preview.py` now defaults to the newest session.
