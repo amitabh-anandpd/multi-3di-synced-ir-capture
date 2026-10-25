@@ -21,19 +21,14 @@ ap.add_argument("--seconds", type=float, default=10)
 ap.add_argument("--serial", help="enable images on this device only")
 args = ap.parse_args()
 
-conn = leapc.connect()
-devices = leapc.open_devices(conn)
+conn, devices = leapc.connect(serials=[args.serial] if args.serial else None)
 print(f"{len(devices)} device(s):", ", ".join(f"{d['serial']} (id {d['id']}, pid 0x{d['pid']:X})" for d in devices))
 if not devices:
     raise SystemExit("No devices found.")
 
 by_id = {}
 for d in devices:
-    if args.serial and d["serial"] != args.serial:
-        continue
-    want = leapc.POLICY_BACKGROUND_FRAMES | leapc.POLICY_IMAGES
-    leapc.check(leapc.lib.LeapSetPolicyFlagsEx(conn, d["handle"], want, 0), "LeapSetPolicyFlagsEx")
-    d.update(frame_ids=[], dev_ts=[], host_ts=[], saved=False, policy=0)
+    d.update(frame_ids=[], dev_ts=[], host_ts=[], saved=False)
     by_id[d["id"]] = d
 
 os.makedirs("sessions/spike", exist_ok=True)
@@ -43,15 +38,14 @@ t_end = time.monotonic() + args.seconds
 while time.monotonic() < t_end:
     if leapc.lib.LeapPollConnection(conn, 100, ctypes.byref(msg)) != leapc.RS_SUCCESS:
         continue
-    if msg.type == leapc.EVT_POLICY and msg.device_id in by_id:
-        by_id[msg.device_id]["policy"] = leapc.policy_event_flags(msg)
     if msg.type != leapc.EVT_IMAGE:
         other[msg.type] = other.get(msg.type, 0) + 1
         continue
     host_ts = leapc.lib.LeapGetNow()
     d = by_id.get(msg.device_id)
     if d is None:
-        other["image_from_unknown_device_%d" % msg.device_id] = other.get("image_from_unknown_device_%d" % msg.device_id, 0) + 1
+        k = f"image_from_unknown_device_{msg.device_id}"
+        other[k] = other.get(k, 0) + 1
         continue
     ev = leapc.image_event(msg)
     d["frame_ids"].append(ev.info.frame_id)
@@ -80,10 +74,5 @@ for d in by_id.values():
     print(f"{d['serial']:<36}{len(ids):>8}{fps:>8.1f}{int((gaps > 1).sum()):>9}{int((gaps - 1).clip(0).sum()):>9}"
           f"{jitter:>11.2f}{latency:>12.2f}")
 print("other events:", other)
-for d in by_id.values():
-    if not d["policy"] & leapc.POLICY_BACKGROUND_FRAMES:
-        print(f"WARNING {d['serial']}: background frames refused -> Control Panel > enable 'Allow Background Apps'")
-    if not d["policy"] & leapc.POLICY_IMAGES:
-        print(f"WARNING {d['serial']}: images policy refused -> Control Panel > enable 'Allow Images'")
 
 leapc.close(conn, devices)

@@ -16,8 +16,7 @@ RS_INSUFFICIENT_BUFFER = 0xE2010003
 RS_TIMEOUT = 0xE2010004
 
 CONNECTION_CONFIG_MULTI_DEVICE_AWARE = 0x00000001
-POLICY_BACKGROUND_FRAMES = 0x00000001  # needed: a console script never has focus. Granted only if
-POLICY_IMAGES = 0x00000002             # "Allow Background Apps" is on in the Control Panel.
+POLICY_IMAGES = 0x00000002
 
 # eLeapEventType
 EVT_CONNECTION = 1
@@ -41,6 +40,10 @@ class LEAP_DEVICE_REF(_Packed):
 
 class LEAP_CONNECTION_CONFIG(_Packed):
     _fields_ = [("size", c_uint32), ("flags", c_uint32), ("server_namespace", c_char_p), ("tracking_origin", c_int32)]
+
+
+class LEAP_DEVICE_EVENT(_Packed):
+    _fields_ = [("flags", c_uint32), ("device", LEAP_DEVICE_REF), ("status", c_uint32)]
 
 
 class LEAP_DEVICE_INFO(_Packed):
@@ -84,7 +87,6 @@ _sig("LeapGetNow", c_int64)
 _sig("LeapCreateConnection", c_uint32, POINTER(LEAP_CONNECTION_CONFIG), POINTER(c_void_p))
 _sig("LeapOpenConnection", c_uint32, c_void_p)
 _sig("LeapPollConnection", c_uint32, c_void_p, c_uint32, POINTER(LEAP_CONNECTION_MESSAGE))
-_sig("LeapGetDeviceList", c_uint32, c_void_p, POINTER(LEAP_DEVICE_REF), POINTER(c_uint32))
 _sig("LeapOpenDevice", c_uint32, LEAP_DEVICE_REF, POINTER(c_void_p))
 _sig("LeapGetDeviceInfo", c_uint32, c_void_p, POINTER(LEAP_DEVICE_INFO))
 _sig("LeapSubscribeEvents", c_uint32, c_void_p, c_void_p)
@@ -99,50 +101,54 @@ def check(rs, what=""):
         raise RuntimeError(f"LeapC {what} failed: 0x{rs:08X}")
 
 
-def connect(timeout_s=5.0, settle_s=1.0):
-    """Open a multi-device-aware connection; keep polling settle_s after connecting so device events arrive."""
+def _serial(h):
+    info = LEAP_DEVICE_INFO(size=sizeof(LEAP_DEVICE_INFO))
+    rs = lib.LeapGetDeviceInfo(h, byref(info))  # first call only fills serial_length
+    if rs not in (RS_SUCCESS, RS_INSUFFICIENT_BUFFER):
+        check(rs, "LeapGetDeviceInfo(length)")
+    buf = ctypes.create_string_buffer(info.serial_length)
+    info.serial = ctypes.cast(buf, c_char_p)
+    check(lib.LeapGetDeviceInfo(h, byref(info)), "LeapGetDeviceInfo")
+    return buf.value.decode(), info.pid
+
+
+def connect(settle_s=1.5, timeout_s=5.0, serials=None):
+    """Open a multi-device-aware connection with the images policy on each device.
+
+    Devices must be opened from their device events, inside the poll loop:
+    subscribe first, then set the policy. Opening them via LeapGetDeviceList after
+    polling gives zero frames (measured, SDK 6.2.0).
+    `serials` limits which devices get images. Returns (conn, [{'id', 'handle', 'serial', 'pid'}]).
+    """
     cfg = LEAP_CONNECTION_CONFIG(sizeof(LEAP_CONNECTION_CONFIG), CONNECTION_CONFIG_MULTI_DEVICE_AWARE, None, 0)
     conn = c_void_p()
     check(lib.LeapCreateConnection(byref(cfg), byref(conn)), "LeapCreateConnection")
     check(lib.LeapOpenConnection(conn), "LeapOpenConnection")
-    msg = LEAP_CONNECTION_MESSAGE()
+    msg, devices = LEAP_CONNECTION_MESSAGE(), []
     deadline, connected = time.monotonic() + timeout_s, False
     while time.monotonic() < deadline:
-        if lib.LeapPollConnection(conn, 100, byref(msg)) == RS_SUCCESS and msg.type == EVT_CONNECTION and not connected:
+        if lib.LeapPollConnection(conn, 100, byref(msg)) != RS_SUCCESS:
+            continue
+        if msg.type == EVT_CONNECTION and not connected:
             connected, deadline = True, time.monotonic() + settle_s
+        elif msg.type == EVT_DEVICE:
+            ref = ctypes.cast(msg.pointer, POINTER(LEAP_DEVICE_EVENT)).contents.device
+            h = c_void_p()
+            check(lib.LeapOpenDevice(ref, byref(h)), "LeapOpenDevice")
+            serial, pid = _serial(h)
+            if serials and serial not in serials:
+                lib.LeapCloseDevice(h)
+                continue
+            check(lib.LeapSubscribeEvents(conn, h), "LeapSubscribeEvents")
+            check(lib.LeapSetPolicyFlagsEx(conn, h, POLICY_IMAGES, 0), "LeapSetPolicyFlagsEx")
+            devices.append({"id": ref.id, "handle": h, "serial": serial, "pid": pid})
     if not connected:
         raise RuntimeError("No connection to the Ultraleap Tracking Service. Is it running?")
-    return conn
-
-
-def open_devices(conn):
-    """Return [{'id', 'handle', 'serial', 'pid'}] for every connected device, subscribed to its events."""
-    n = c_uint32(0)
-    check(lib.LeapGetDeviceList(conn, None, byref(n)), "LeapGetDeviceList(count)")
-    refs = (LEAP_DEVICE_REF * n.value)()
-    check(lib.LeapGetDeviceList(conn, refs, byref(n)), "LeapGetDeviceList")
-    devices = []
-    for ref in refs[:n.value]:
-        h = c_void_p()
-        check(lib.LeapOpenDevice(ref, byref(h)), "LeapOpenDevice")
-        info = LEAP_DEVICE_INFO(size=sizeof(LEAP_DEVICE_INFO))
-        rs = lib.LeapGetDeviceInfo(h, byref(info))  # first call only fills serial_length
-        if rs not in (RS_SUCCESS, RS_INSUFFICIENT_BUFFER):
-            check(rs, "LeapGetDeviceInfo(length)")
-        buf = ctypes.create_string_buffer(info.serial_length)
-        info.serial = ctypes.cast(buf, c_char_p)
-        check(lib.LeapGetDeviceInfo(h, byref(info)), "LeapGetDeviceInfo")
-        check(lib.LeapSubscribeEvents(conn, h), "LeapSubscribeEvents")
-        devices.append({"id": ref.id, "handle": h, "serial": buf.value.decode(), "pid": info.pid})
-    return devices
+    return conn, devices
 
 
 def image_event(msg):
     return ctypes.cast(msg.pointer, POINTER(LEAP_IMAGE_EVENT)).contents
-
-
-def policy_event_flags(msg):
-    return ctypes.cast(msg.pointer, POINTER(c_uint32 * 2)).contents[1]  # LEAP_POLICY_EVENT.current_policy
 
 
 def image_bytes(img):
