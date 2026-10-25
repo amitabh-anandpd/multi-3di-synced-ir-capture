@@ -69,7 +69,8 @@ for d in devices:
     q = queue.Queue()
     t = threading.Thread(target=writer, args=(cam_dir, q))
     t.start()
-    cams[d["id"]] = {"name": name, "dir": cam_dir, "q": q, "thread": t, "mver": None, "n": 0, "max_q": 0}
+    cams[d["id"]] = {"name": name, "dir": cam_dir, "q": q, "thread": t, "mver": None, "n": 0, "max_q": 0,
+                     "handle": d["handle"]}
 
 meta = {
     "cameras": {name_of[d["serial"]]: d["serial"] for d in devices},
@@ -78,6 +79,8 @@ meta = {
     "duration_s": args.duration,
     "notes": args.notes,
     "timestamps": "device_ts_us and host_ts_us both in the LeapGetNow() microsecond clock",
+    "baseline_um": {name_of[d["serial"]]: d["baseline_um"] for d in devices},
+    "calibration": {},  # LeapC factory calibration per camera, read at its first frame
 }
 print(f"Recording {sorted(meta['cameras'])} for {args.duration:g}s -> {session}  (Ctrl+C to stop)")
 
@@ -106,6 +109,8 @@ try:
         left, right = ev.image
         p = left.properties
         mver = left.matrix_version
+        if c["name"] not in meta["calibration"]:
+            meta["calibration"][c["name"]] = leapc.calibration(conn, c["handle"])
         if mver != c["mver"]:  # new distortion map: save it (pointer is valid only until the next poll)
             np.savez(os.path.join(c["dir"], f"distortion_v{mver}.npz"),
                      left=leapc.distortion(left), right=leapc.distortion(right))

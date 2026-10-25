@@ -15,6 +15,17 @@
 
 Disk: ~0.85 GB per camera per minute (PNG level 1).
 
+## M3b depth preview (2026-10-26)
+- `depth_preview.py` works end to end: distortion map -> rectified 400×400 virtual pinhole pair
+  (±45°, f = 200 px) -> SGBM -> `.ply`. Rows line up in the rectified pair.
+- The distortion map layout was verified against LeapC's `LeapRectilinearToPixelEx`: 0.6 px median
+  error (see `leapc.distortion`).
+- Calibration per unit (now saved in session.json): imagers parallel, offset only in x.
+  Baselines from the extrinsics: cam_A 63.86 mm, cam_B 65.75 mm. Device-info baselines are rounded (63 / 65 mm).
+- LeapC's `K` and `D` don't behave as a pixel-space OpenCV model (f ≈ 1.28, c ≈ −2). They're saved but not used.
+- First desk scene: an arm at ~31 cm came out as a clean surface. Dark or far areas have no IR return, so no depth.
+- Known-size object check: pending.
+
 ## Measured
 2026-10-26, SDK 6.2.0, 2 × 3Di, 10 s runs:
 
@@ -32,6 +43,9 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
   Service log: "Broken device detected, missing frame data". Fixed by reseating the cable and restarting.
   capture_multi.py now aborts if a camera sends nothing in 2 s.
 - Disk use (~1.7 GB/min for 2 cams) limits long sessions. Fine for bursts.
+- The 64×64 distortion map is coarse (0.6 px error). For phase 2 depth, consider saving a dense
+  `LeapRectilinearToPixelEx` table at capture time, as the old repo's `rect_lut.npz` did.
+- Sessions recorded before 2026-10-26 00:53 have no calibration in session.json.
 
 ## Resolved
 - 7 single-frame ID gaps per 10 s in M1: gone in the M3 run (0 drops). Probably the same failing USB link.
@@ -42,3 +56,4 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
   LeapGetDeviceList after polling gave no frames. No Control Panel "background apps" setting is needed.
 - 2026-10-26: M2 passed. Names stayed stable after unplugging and swapping the ports.
 - 2026-10-26: M3 passed after cam_B's USB fault was fixed (reseat + restart). 60 s, 0 drops on both cameras.
+- 2026-10-26: M3b pipeline working. Known-object size check pending.

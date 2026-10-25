@@ -73,6 +73,10 @@ class LEAP_IMAGE_EVENT(_Packed):
     _fields_ = [("info", LEAP_FRAME_HEADER), ("image", LEAP_IMAGE * 2), ("calib", c_void_p)]
 
 
+class LEAP_VECTOR(_Packed):
+    _fields_ = [("x", c_float), ("y", c_float), ("z", c_float)]
+
+
 class LEAP_CONNECTION_MESSAGE(_Packed):
     _fields_ = [("size", c_uint32), ("type", c_int32), ("pointer", c_void_p), ("device_id", c_uint32)]
 
@@ -93,6 +97,10 @@ _sig("LeapOpenDevice", c_uint32, LEAP_DEVICE_REF, POINTER(c_void_p))
 _sig("LeapGetDeviceInfo", c_uint32, c_void_p, POINTER(LEAP_DEVICE_INFO))
 _sig("LeapSubscribeEvents", c_uint32, c_void_p, c_void_p)
 _sig("LeapSetPolicyFlagsEx", c_uint32, c_void_p, c_void_p, c_uint64, c_uint64)
+_sig("LeapCameraMatrixEx", None, c_void_p, c_void_p, c_int32, POINTER(c_float))
+_sig("LeapDistortionCoeffsEx", None, c_void_p, c_void_p, c_int32, POINTER(c_float))
+_sig("LeapExtrinsicCameraMatrixEx", None, c_void_p, c_void_p, c_int32, POINTER(c_float))
+_sig("LeapRectilinearToPixelEx", LEAP_VECTOR, c_void_p, c_void_p, c_int32, LEAP_VECTOR)
 _sig("LeapCloseDevice", None, c_void_p)
 _sig("LeapCloseConnection", None, c_void_p)
 _sig("LeapDestroyConnection", None, c_void_p)
@@ -111,7 +119,7 @@ def _serial(h):
     buf = ctypes.create_string_buffer(info.serial_length)
     info.serial = ctypes.cast(buf, c_char_p)
     check(lib.LeapGetDeviceInfo(h, byref(info)), "LeapGetDeviceInfo")
-    return buf.value.decode(), info.pid
+    return buf.value.decode(), info.pid, info.baseline
 
 
 def connect(settle_s=1.5, timeout_s=5.0, serials=None):
@@ -120,7 +128,8 @@ def connect(settle_s=1.5, timeout_s=5.0, serials=None):
     Devices must be opened from their device events, inside the poll loop:
     subscribe first, then set the policy. Opening them via LeapGetDeviceList after
     polling gives zero frames (measured, SDK 6.2.0).
-    `serials` limits which devices get images. Returns (conn, [{'id', 'handle', 'serial', 'pid'}]).
+    `serials` limits which devices get images.
+    Returns (conn, [{'id', 'handle', 'serial', 'pid', 'baseline_um'}]).
     """
     cfg = LEAP_CONNECTION_CONFIG(sizeof(LEAP_CONNECTION_CONFIG), CONNECTION_CONFIG_MULTI_DEVICE_AWARE, None, 0)
     conn = c_void_p()
@@ -137,13 +146,13 @@ def connect(settle_s=1.5, timeout_s=5.0, serials=None):
             ref = ctypes.cast(msg.pointer, POINTER(LEAP_DEVICE_EVENT)).contents.device
             h = c_void_p()
             check(lib.LeapOpenDevice(ref, byref(h)), "LeapOpenDevice")
-            serial, pid = _serial(h)
+            serial, pid, baseline_um = _serial(h)
             if serials and serial not in serials:
                 lib.LeapCloseDevice(h)
                 continue
             check(lib.LeapSubscribeEvents(conn, h), "LeapSubscribeEvents")
             check(lib.LeapSetPolicyFlagsEx(conn, h, POLICY_IMAGES, 0), "LeapSetPolicyFlagsEx")
-            devices.append({"id": ref.id, "handle": h, "serial": serial, "pid": pid})
+            devices.append({"id": ref.id, "handle": h, "serial": serial, "pid": pid, "baseline_um": baseline_um})
     if not connected:
         raise RuntimeError("No connection to the Ultraleap Tracking Service. Is it running?")
     return conn, devices
@@ -160,9 +169,31 @@ def image_bytes(img):
 
 
 def distortion(img):
-    """Copy the 64x64 (x, y) float32 distortion map of one image."""
+    """Copy the 64x64 (x, y) float32 distortion map of one image.
+
+    Layout (verified against LeapRectilinearToPixelEx, 0.6 px median error):
+    m[r, c] is the raw pixel for ray slope (rx, ry) = (c/63*8 - 4, 4 - r/63*8),
+    as normalised (x, y); pixel = (x*W - 0.5, y*H + 0.5). Rows run bottom-up.
+    """
     return np.frombuffer(ctypes.string_at(img.distortion_matrix, DISTORTION_N * DISTORTION_N * 2 * 4),
                          np.float32).reshape(DISTORTION_N, DISTORTION_N, 2)
+
+
+def calibration(conn, h):
+    """Factory calibration of both imagers. Only valid after the device has sent an image.
+
+    K: OpenCV camera matrix (3x3). D: 8 OpenCV distortion coeffs.
+    extrinsic: 4x4 (LeapC returns column-major; transposed here to row-major).
+    """
+    out = {}
+    for name, persp in (("left", 1), ("right", 2)):  # eLeapPerspectiveType_stereo_left/right
+        k, d, e = (c_float * 9)(), (c_float * 8)(), (c_float * 16)()
+        lib.LeapCameraMatrixEx(conn, h, persp, k)
+        lib.LeapDistortionCoeffsEx(conn, h, persp, d)
+        lib.LeapExtrinsicCameraMatrixEx(conn, h, persp, e)
+        out[name] = {"K": np.array(k).reshape(3, 3).tolist(), "D": list(d),
+                     "extrinsic": np.array(e).reshape(4, 4).T.tolist()}
+    return out
 
 
 def close(conn, devices):

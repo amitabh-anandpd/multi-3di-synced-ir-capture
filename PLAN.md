@@ -44,9 +44,10 @@ If not, stop and fix it (USB ports, SDK version) before going on.
 **Exit:** a 60 s two-camera session produces a clean folder, and queue depth stays bounded.
 
 ## M3b — Depth preview (early check of phase 2)
-- From one captured frame of one camera: undistort with the saved distortion map, crop to
-  a virtual pinhole stereo pair (adapt `perspective_crop.py`), run OpenCV StereoSGBM, convert
-  disparity to depth with the device baseline, and write a `.ply`.
+- From one captured frame of one camera: undistort with the saved distortion map into one shared
+  virtual pinhole camera (the imagers are parallel, so the pair comes out rectified), run OpenCV
+  StereoSGBM, convert disparity to depth with the baseline from the LeapC extrinsics, and write a `.ply`.
+  Implemented as `depth_preview.py`.
 - View it in CloudCompare or MeshLab.
 - Throwaway script. It answers whether 3Di stereo depth is usable before phase 2 relies on it.
 
