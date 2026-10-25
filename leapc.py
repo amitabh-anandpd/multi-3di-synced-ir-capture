@@ -8,6 +8,8 @@ import os
 import time
 from ctypes import POINTER, byref, c_char_p, c_float, c_int32, c_int64, c_uint32, c_uint64, c_void_p, sizeof
 
+import numpy as np
+
 DLL_PATH = os.environ.get("LEAPC_DLL", r"C:\Program Files\Ultraleap\LeapSDK\lib\x64\LeapC.dll")
 
 # eLeapRS
@@ -155,6 +157,12 @@ def image_bytes(img):
     """Copy one IR image out of LeapC's buffer (valid only until the next poll)."""
     p = img.properties
     return ctypes.string_at(img.data + img.offset, p.width * p.height * p.bpp)
+
+
+def distortion(img):
+    """Copy the 64x64 (x, y) float32 distortion map of one image."""
+    return np.frombuffer(ctypes.string_at(img.distortion_matrix, DISTORTION_N * DISTORTION_N * 2 * 4),
+                         np.float32).reshape(DISTORTION_N, DISTORTION_N, 2)
 
 
 def close(conn, devices):
