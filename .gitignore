@@ -1,0 +1,4 @@
+sessions/
+MEMORY.md
+__pycache__/
+.venv/
