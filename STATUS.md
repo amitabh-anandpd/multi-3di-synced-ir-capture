@@ -29,7 +29,12 @@ Disk: ~0.85 GB per camera per minute (PNG level 1).
   LEDs matches well; smooth white plastic and the plain desk match poorly (9–16 % of pixels valid per frame).
 - Limits seen: nothing closer than ~103 mm (128 px max disparity), the left 128 px columns never get depth
   (SGBM), and far/dark areas have no IR return.
-- Known-size object check: pending (measure the hand cloud in CloudCompare against a ruler).
+- Size check on the hand: ruler 150 mm, cloud 165.5 mm (CloudCompare point picking, units are mm) -> +10 %.
+  Lateral size is X = (u - c) * baseline / disparity, so the virtual f cancels; the error comes from
+  disparity or point picking, not the rectification focal length. Likely cause: SGBM edge fattening
+  (5 px block, ~2-3 px per edge, ~2 mm/px at 400 mm) on an edge-to-edge measurement.
+  No global scale correction applied. To confirm: a rigid flat object at ~30 cm, measured between marks
+  inside its face rather than at its silhouette.
 
 ## Measured
 2026-10-26, SDK 6.2.0, 2 × 3Di, 10 s runs:
@@ -64,3 +69,4 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
 - 2026-10-26: M3b pipeline working. Known-object size check pending.
 - 2026-10-26: First clean hand point cloud from cam_B. cam_A not detected in this sitting.
   `depth_preview.py` now defaults to the newest session.
+- 2026-10-26: M3b passed (roughly): hand size +10 % vs. ruler. Rigid-object check still to do.
