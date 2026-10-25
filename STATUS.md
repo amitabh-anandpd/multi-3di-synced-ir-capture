@@ -3,6 +3,7 @@
 ## Works
 - `leapc.py`: ctypes LeapC access, multi-device, no compiled bindings (SDK 6.2.0).
 - `spike_two_cams.py`: both 3Dis stream IR images at the same time.
+- `list_devices.py`: stable names (cam_A = …6195, cam_B = …6230). Survived swapping the USB ports.
 
 ## Measured
 2026-10-26, SDK 6.2.0, 2 × 3Di, 10 s runs:
@@ -23,3 +24,4 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
 - 2026-10-26: M1 passed. Root cause of the earlier zero-frame result: devices have to be opened
   from device events inside the poll loop (subscribe, then set the policy). Enumerating with
   LeapGetDeviceList after polling gave no frames. No Control Panel "background apps" setting is needed.
+- 2026-10-26: M2 passed. Names stayed stable after unplugging and swapping the ports.

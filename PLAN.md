@@ -43,6 +43,15 @@ If not, stop and fix it (USB ports, SDK version) before going on.
 
 **Exit:** a 60 s two-camera session produces a clean folder, and queue depth stays bounded.
 
+## M3b — Depth preview (early check of phase 2)
+- From one captured frame of one camera: undistort with the saved distortion map, crop to
+  a virtual pinhole stereo pair (adapt `perspective_crop.py`), run OpenCV StereoSGBM, convert
+  disparity to depth with the device baseline, and write a `.ply`.
+- View it in CloudCompare or MeshLab.
+- Throwaway script. It answers whether 3Di stereo depth is usable before phase 2 relies on it.
+
+**Exit:** a `.ply` of a known object at 20–50 cm that looks right, with its size roughly correct.
+
 ## M4 — Stream health (`tools/stream_health.py`)
 - Per camera: FPS, frame_id gaps (drops), timestamp jitter. Read from `frames.csv`.
 - Run each unit alone, then both together. Compare.
@@ -64,7 +73,12 @@ If not, stop and fix it (USB ports, SDK version) before going on.
 - At 180° and at 90°: A alone vs. A with B on. Use multi-second runs.
 - Report mean brightness, % saturated pixels, and flicker over time. Save example frames.
 
-**Exit:** the result per angle is recorded, which decides whether simultaneous is usable for each geometry.
+- Once the mounting angle is chosen, mount the rig rigidly and record one ordinary session of a
+  printed checkerboard moved through the shared view. Phase 2 calibrates the extrinsics from it,
+  so no code is needed now. Recalibrate if the rig moves.
+
+**Exit:** the result per angle is recorded, which decides whether simultaneous is usable for each
+geometry. A calibration-board session is recorded on the final rig.
 
 ## M8 — Sequential mode (later)
 - `capture_multi.py --sequential`: capture each camera in turn while the others are paused or off.
