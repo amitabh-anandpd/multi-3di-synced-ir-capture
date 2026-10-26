@@ -70,3 +70,8 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
 - 2026-10-26: First clean hand point cloud from cam_B. cam_A not detected in this sitting.
   `depth_preview.py` now defaults to the newest session.
 - 2026-10-26: M3b passed (roughly): hand size +10 % vs. ruler. Rigid-object check still to do.
+- 2026-10-26: `depth_preview.py` density work, on the hand session (`--size 800 --max-disp 256 --zmin 150
+  --zmax 600 --min-gray 40`): 1 frame 47k points; `--frames 10 --min-hits 0.3` (per-pixel median of 10
+  frames) 78k points with the wall and hand filled in as continuous surfaces. Also: right image rendered
+  128 px wider so the left strip gets depth; `--block`/`--speckle` flags (smaller values keep thin
+  objects but add noise). Thin dark objects (pen) still mostly missing; glossy desk gives a mirrored ghost.
