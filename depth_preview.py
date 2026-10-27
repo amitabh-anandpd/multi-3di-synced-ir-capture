@@ -9,13 +9,13 @@ depth = f * baseline / disparity.
 Writes <session>/<cam>/preview/ : rectified L/R, disparity PNG, points.ply.
 """
 import argparse
-import csv
 import glob
-import json
 import os
 
 import cv2
 import numpy as np
+
+from session_io import load_rows, load_session, read_pair
 
 
 def rectify_maps(dmap, size, slope, raw_wh, pad=0):
@@ -68,8 +68,8 @@ if args.session is None or not os.path.isdir(args.session):
     print("session:", args.session)
 
 cam_dir = os.path.join(args.session, args.cam)
-meta = json.load(open(os.path.join(args.session, "session.json")))
-rows = list(csv.DictReader(open(os.path.join(cam_dir, "frames.csv"))))
+meta = load_session(args.session)
+rows = load_rows(cam_dir)
 mid = len(rows) // 2 if args.frame is None else args.frame
 sel = rows[max(0, mid - args.frames // 2):][:args.frames]
 row = sel[len(sel) // 2]  # reference frame: its image colours the points
@@ -81,10 +81,10 @@ dmaps = np.load(os.path.join(cam_dir, f"distortion_v{row['matrix_version']}.npz"
 
 
 def load_raw(r):
-    return [cv2.imread(os.path.join(cam_dir, "frames", r[k]), cv2.IMREAD_GRAYSCALE) for k in ("left", "right")]
+    return read_pair(cam_dir, r, meta["image_size"])
 
 
-wh = load_raw(row)[0].shape[::-1]
+wh = tuple(meta["image_size"])
 pad = args.max_disp  # SGBM leaves the first numDisparities columns empty; they fall in the pad
 maps = []
 for side in ("left", "right"):

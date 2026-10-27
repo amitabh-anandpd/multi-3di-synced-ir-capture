@@ -4,7 +4,10 @@
 - `leapc.py`: ctypes LeapC access, multi-device, no compiled bindings (SDK 6.2.0).
 - `spike_two_cams.py`: both 3Dis stream IR images at the same time.
 - `list_devices.py`: stable names (cam_A = …6195, cam_B = …6230). Survived swapping the USB ports.
-- `capture_multi.py`: simultaneous capture of both cameras into a session folder.
+- `capture_multi.py`: simultaneous capture of both cameras into a session folder. Since 2026-10-27
+  frames go to `cam_X/frames.bin` (raw, offsets in `frames.csv`); `session_io.py` reads both this and
+  the older PNG sessions; `tools/export_png.py` exports PNGs.
+- `tools/stream_health.py`: FPS, drops, jitter, latency, queue depth per camera, for one or more sessions.
 
 ## M3 capture (2026-10-26, 60 s, both cameras, one Intel USB 3.2 controller, no hub)
 
@@ -48,11 +51,81 @@ Disk: ~0.85 GB per camera per minute (PNG level 1).
 
 Images: 384×384 per eye, 1 byte/pixel, IR format.
 
+## M4 stream health (2026-10-27, `tools/stream_health.py`) — passed
+
+After switching capture to one raw `frames.bin` per camera (plugged in):
+
+| run | cam_A FPS | cam_B FPS | drops | jitter | latency | max queue |
+|---|---|---|---|---|---|---|
+| A alone, 20 s | 90.0 | — | 0 | 0.27 ms | 9.4 ms | 96 |
+| B alone, 20 s | — | 90.0 | 0 | 0.40 ms | 8.1 ms | 166 |
+| together, 20 s | 89.2 | 89.2 | 0 / 1 | 1.0 ms | 11 ms | 97 / 48 |
+| together, 60 s | 89.1 | 89.3 | 2 / 1 | 1.0 ms | 12.5 ms | 107 / 92 |
+
+Together vs. alone: −1 % FPS, 0.03 % frames dropped. Disk: ~3 GB/min for two cameras (raw, uncompressed).
+
+Before the fix, with one PNG per image (20 s runs):
+
+| run | cam_A FPS | cam_B FPS | writer queue |
+|---|---|---|---|
+| alone, AC, empty scene | 89.7 | 89.2 | 12 / 253 |
+| together, PNG level 1, person in cam_B view | 60.8 | 60.3 | ~500 |
+| together, PNG level 0, empty scene | 70.4 | 70.3 | 8 |
+| together, PNG level 0, written outside OneDrive | 76.3 | 75.8 | 6 |
+| together, image writes stubbed out | 89.4 | 89.4 | 0 |
+
+No frame_id gaps in any run: the cameras slow down, frames aren't dropped. Cause: file creation
+(~360 PNGs/s), which starves the tracking service. A person in view costs a further ~9 % (hand tracking).
+On battery everything is worse. Fixed by writing one raw file per camera (above).
+
+## M5 frame pairing (2026-10-27, `pair_frames.py`) — passed
+
+Nearest device timestamp to each cam_A frame, groups kept only if |gap| ≤ half a period (5.55 ms) and
+no frame is reused.
+
+| session | FPS | groups kept | median gap | mean \|gap\| | p95 \|gap\| | max |
+|---|---|---|---|---|---|---|
+| 122505 (60 s, raw) | 89 | 99.3 % | −0.05 ms | 0.54 ms | 3.28 ms | 5.54 ms |
+| 122334 (20 s, raw) | 89 | 99.6 % | −0.64 ms | 0.72 ms | 1.19 ms | 5.24 ms |
+| 121816 (PNG era, slowed to 74 FPS) | 74 | 91.3 % | +0.02 ms | 3.14 ms | 5.78 ms | 6.38 ms |
+
+- At full rate the two cameras' frames arrive nearly in step: 85–99 % of pairs within 1 ms per 5 s
+  window, with the median drifting only ~0.003 ms/s (−0.14 → +0.03 ms over 60 s).
+- Outliers are mostly isolated single frames (206 runs, median length 1): timestamp jitter, not
+  a phase change. In 122505 they grow after 45 s (within 1 ms: 98 % → 53 %).
+- Whether device_ts reflects exposure time or arrival time is unknown; M6 (physical event) decides
+  how far these gaps can be trusted.
+
+## M6 physical sync (2026-10-27, `tools/check_sync.py`) — passed
+
+Session 2026-10-27_154818: both cameras aimed at one desk spot (~20–30 cm, aimed with
+`tools/live_view.py`), hand slapping it; 83.5 FPS on both, 91.6 % of frames grouped.
+
+| event (s) | best lag (groups, + = cam_B later) | r |
+|---|---|---|
+| 0.13 | 0 | 0.79 |
+| 0.93 | +1 | 0.72 |
+| 2.28 | +1 | 0.70 |
+| 2.83 | 0 | 0.75 |
+| 3.97 | 0 | 0.69 |
+
+5/5 in the same or adjacent group (1 group = 11.4 ms); whole-session best lag 0 (r = 0.57).
+So groups.json pairs frames taken within about one frame of each other, and device_ts can be
+trusted to that level. Method: motion energy per camera (most-changed cell of a 12×12 grid),
+cross-correlated ±0.75 s around each event. Comparing threshold-crossing times instead gave
+20–90 ms differences, because each camera sees the hand enter its view at a different moment.
+
+## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
+
+With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
+between runs) even with no disk writes. Closed: 89.9 / 90.0 alone, 88.0 / 88.4 together. Restarting the
+service did not help on its own. `capture_multi.py` now prints a warning if the panel is running.
+
 ## Open issues
 - A bad USB connection made cam_B silent. Control Panel warning: "USB hub or low powered port".
   Service log: "Broken device detected, missing frame data". Fixed by reseating the cable and restarting.
   capture_multi.py now aborts if a camera sends nothing in 2 s.
-- Disk use (~1.7 GB/min for 2 cams) limits long sessions. Fine for bursts.
+- Disk use (~3 GB/min for 2 cams, raw) limits long sessions. Fine for bursts.
 - The 64×64 distortion map is coarse (0.6 px error). For phase 2 depth, consider saving a dense
   `LeapRectilinearToPixelEx` table at capture time, as the old repo's `rect_lut.npz` did.
 - Sessions recorded before 2026-10-26 00:53 have no calibration in session.json.
@@ -75,3 +148,15 @@ Images: 384×384 per eye, 1 byte/pixel, IR format.
   frames) 78k points with the wall and hand filled in as continuous surfaces. Also: right image rendered
   128 px wider so the left strip gets depth; `--block`/`--speckle` flags (smaller values keep thin
   objects but add noise). Thin dark objects (pen) still mostly missing; glossy desk gives a mirrored ghost.
+- 2026-10-26: M3b passed. Rigid object (phone, back to camera, `sessions/2026-10-26_235243`, --size 800):
+  depth 443 mm (IQR ±5 mm), height 160.7 vs 166.64 mm (−3.6 %), width 77.6 vs 78.43 mm (−1.1 %);
+  extent from the phone's image box × median depth / f. A 67 mm CloudCompare pick was top-to-middle,
+  not a scale error.
+- 2026-10-27: M4 passed after switching capture from per-image PNGs to one raw file per camera
+  (60 s together: 89.1 / 89.3 FPS, 0.03 % drops).
+- 2026-10-27: M5 passed: 99.3 % of frames grouped, median gap −0.05 ms, p95 3.3 ms (60 s session).
+- 2026-10-27: First three M6 recordings invalid: no hand inside either view, and ~52–58 FPS because the
+  Ultraleap Control Panel was open. `tools/check_sync.py` written; detection uses the most-changed cell
+  of a 12×12 grid so a local hand motion stands out.
+- 2026-10-27: M6 passed (5/5 events within one group). Added `tools/live_view.py` for aiming the
+  cameras without the Control Panel.

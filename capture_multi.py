@@ -4,7 +4,9 @@
   python capture_multi.py --cams cam_A --notes "cam_A alone"
 
 The poll loop only copies frames onto a per-camera queue; one writer thread per
-camera saves PNGs, so slow disk writes show up as queue_depth, not dropped frames.
+camera appends them to cam_X/frames.bin, so slow disk writes show up as queue_depth,
+not dropped frames. One file per camera: creating ~360 PNGs/s cost ~15-20 % FPS (M4).
+Read frames back with session_io.py; export PNGs with tools/export_png.py.
 Ctrl+C stops early; queued frames are still written.
 """
 import argparse
@@ -13,11 +15,11 @@ import datetime
 import json
 import os
 import queue
+import subprocess
 import threading
 import time
 from ctypes import byref
 
-import cv2
 import numpy as np
 
 import leapc
@@ -27,18 +29,20 @@ VERSION_TXT = r"C:\Program Files\Ultraleap\version.txt"
 
 
 def writer(cam_dir, q):
-    with open(os.path.join(cam_dir, "frames.csv"), "w", newline="") as f:
+    """frames.bin: per frame, left then right image, raw uint8 (size in session.json image_size)."""
+    with open(os.path.join(cam_dir, "frames.csv"), "w", newline="") as f, \
+            open(os.path.join(cam_dir, "frames.bin"), "wb") as b:
         w = csv.writer(f)
-        w.writerow(["frame_id", "device_ts_us", "host_ts_us", "matrix_version", "left", "right", "queue_depth"])
+        w.writerow(["frame_id", "device_ts_us", "host_ts_us", "matrix_version", "offset", "queue_depth"])
         while True:
             item = q.get()
             if item is None:
                 return
             frame_id, dev_ts, host_ts, mver, left, right, depth = item
-            names = [f"{frame_id:08d}_L.png", f"{frame_id:08d}_R.png"]
-            for name, img in zip(names, (left, right)):
-                cv2.imwrite(os.path.join(cam_dir, "frames", name), img, [cv2.IMWRITE_PNG_COMPRESSION, 1])
-            w.writerow([frame_id, dev_ts, host_ts, mver, *names, depth])
+            offset = b.tell()
+            b.write(left)
+            b.write(right)
+            w.writerow([frame_id, dev_ts, host_ts, mver, offset, depth])
 
 
 ap = argparse.ArgumentParser()
@@ -46,6 +50,10 @@ ap.add_argument("--duration", type=float, default=10, help="seconds")
 ap.add_argument("--cams", nargs="+", help="camera names from config.json (default: all)")
 ap.add_argument("--notes", default="")
 args = ap.parse_args()
+
+tasks = subprocess.run(["tasklist", "/fo", "csv", "/nh"], capture_output=True, text=True).stdout
+if "Ultraleap Control Panel" in tasks:  # its live view halved our FPS (49-55 vs 88-90, 2026-10-27)
+    print("WARNING: Ultraleap Control Panel is running and slows capture to ~50 FPS. Close it (and its tray icon).")
 
 cameras = json.load(open(CONFIG))["cameras"]  # name -> serial
 names = args.cams or sorted(cameras)
@@ -65,7 +73,7 @@ cams = {}  # device id -> state
 for d in devices:
     name = name_of[d["serial"]]
     cam_dir = os.path.join(session, name)
-    os.makedirs(os.path.join(cam_dir, "frames"))
+    os.makedirs(cam_dir)
     q = queue.Queue()
     t = threading.Thread(target=writer, args=(cam_dir, q))
     t.start()
@@ -79,6 +87,8 @@ meta = {
     "duration_s": args.duration,
     "notes": args.notes,
     "timestamps": "device_ts_us and host_ts_us both in the LeapGetNow() microsecond clock",
+    "frame_format": "raw_v1: cam_X/frames.bin, per frame left then right uint8 image_size images, "
+                    "byte offset in frames.csv",
     "baseline_um": {name_of[d["serial"]]: d["baseline_um"] for d in devices},
     "calibration": {},  # LeapC factory calibration per camera, read at its first frame
 }
@@ -115,7 +125,7 @@ try:
             np.savez(os.path.join(c["dir"], f"distortion_v{mver}.npz"),
                      left=leapc.distortion(left), right=leapc.distortion(right))
             c["mver"] = mver
-        imgs = [np.frombuffer(leapc.image_bytes(i), np.uint8).reshape(p.height, p.width) for i in (left, right)]
+        imgs = [leapc.image_bytes(i) for i in (left, right)]  # copies: LeapC's buffer is reused next poll
         meta.setdefault("image_size", [p.width, p.height])  # LeapC memory: read it now, not after close
         depth = c["q"].qsize()
         c["max_q"] = max(c["max_q"], depth)
