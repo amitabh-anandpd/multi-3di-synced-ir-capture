@@ -115,6 +115,24 @@ trusted to that level. Method: motion energy per camera (most-changed cell of a 
 cross-correlated ±0.75 s around each event. Comparing threshold-crossing times instead gave
 20–90 ms differences, because each camera sees the hand enter its view at a different moment.
 
+## Hand-in-view runs and camera phase (2026-11-04)
+
+| session | setup | FPS | drops | groups kept | median gap | \|gap\| p95 |
+|---|---|---|---|---|---|---|
+| 214824 (30 s) | 180°, ~35 cm apart, still fist | 90.0 / 90.0 | 0 / 0 | 99.9 % | +1.13 ms | 1.43 ms |
+| 220133 (60 s) | 90°, 35 cm from the spot, moving open hand | 89.8 / 89.8 | 0 / 0 | 95.0 % | −5.14 ms | 5.44 ms |
+
+- A moving hand didn't lower FPS here, so it doesn't explain the 83.5 FPS of the M6 session.
+- The cameras' relative timing differs between sessions, so the small gaps in M5 can't be assumed. Cause not
+  known yet (2 sessions, and the rig moved between them). 220133 sits near the worst case of half a period
+  (5.55 ms), steady within ~0.2 ms over 60 s.
+- Most of 220133's lost groups come from that offset sitting on the half-period limit, not from bad frames.
+  By gap alone, 97.4 % fall within `--max-gap 0.5` and 99.9 % within 0.55.
+- `check_sync.py` on 220133: 4/4 clear events within one group, but 6 of 10 were unclear (r below 0.5). Whole-session
+  best lag 0 (r = 0.62). At 11.1 ms per group this can't tell a 1 ms offset from a 5 ms one.
+- The Control Panel and tray were running during 220133 and FPS stayed at 89.8, so the panel running doesn't always
+  slow capture.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
