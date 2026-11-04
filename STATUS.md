@@ -146,9 +146,12 @@ Sessions 221801 (alone) and 221843 (with B), dark flask on the desk, 35 cm from 
   The whole-image numbers miss them, so the tool now also reports the share of strongly changed pixels.
 - No glare on the target or desk elsewhere. The extra depth with B on is unexplained; these spots may add points.
 - An earlier pair (220836 / 220955, clear bottle) showed 10 % less depth with B on, but the scene shifted between runs.
-- Gap by capture: −5.14, −2.26, +4.04 ms, each after cam_B was replugged or the rig moved. Whether a new capture
-  alone changes it is still open.
-- Not tested yet: cam_B with cam_A on, and other timing gaps. Whether interference depends on the gap is unknown.
+- Gap by session: +1.13, −5.14, −2.26, +4.04, −0.25 ms. The last two had no replug between them (as instructed, not
+  verified), so a new capture alone appears to change it. No pattern, and no way to set it yet.
+- Run 3 (222531, gap −0.25 ms): no glare at the closest gap so far, brightness +0.3, LED spots still visible. Its
+  0.722 % changed pixels come mostly from the flask and probably cam_A shifting after run 1, so it can't give a
+  fine comparison against the alone run.
+- Not tested yet: cam_B with cam_A on.
 
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
