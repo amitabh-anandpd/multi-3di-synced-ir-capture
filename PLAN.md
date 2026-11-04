@@ -81,6 +81,14 @@ If not, stop and fix it (USB ports, SDK version) before going on.
 **Exit:** the result per angle is recorded, which decides whether simultaneous is usable for each
 geometry. A calibration-board session is recorded on the final rig.
 
+## M7b — Merge check (`tools/merge_check.py`)
+- Find the board corners in 3D from each camera's stereo pair, then fit the rigid transform between
+  the cameras from the M7 calibration session.
+- Apply it to a separate session of a static rigid object. Write a merged `.ply` for MeshLab and
+  measure the gap between the two clouds where they overlap.
+
+**Exit:** median gap of about 5 mm or less at 30–45 cm (starting target, revisit with real data).
+
 ## M8 — Sequential mode (later)
 - `capture_multi.py --sequential`: capture each camera in turn while the others are paused or off.
 - First find out whether LeapC can pause a single device's LEDs. If it can't, fall back to
@@ -92,5 +100,5 @@ geometry. A calibration-board session is recorded on the final rig.
 ---
 
 ## Phase 1 done
-M0–M7 pass, M8 works, and STATUS.md holds: FPS alone vs. together, the sync gap distribution,
-the physical sync result, and interference per angle.
+M0–M7b pass, M8 works, and STATUS.md holds: FPS alone vs. together, the sync gap distribution,
+the physical sync result, interference per angle, and the merge gap.
