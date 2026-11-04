@@ -133,6 +133,23 @@ cross-correlated ±0.75 s around each event. Comparing threshold-crossing times 
 - The Control Panel and tray were running during 220133 and FPS stayed at 89.8, so the panel running doesn't always
   slow capture.
 
+## M7 interference at 90°, cam_A with cam_B on (2026-11-04, `tools/interference.py`)
+
+Sessions 221801 (alone) and 221843 (with B), dark flask on the desk, 35 cm from each camera, gap +4.04 ms:
+
+| | brightness | saturated | flicker | valid depth (mean of 6 samples) |
+|---|---|---|---|---|
+| alone | 27.4 | 0.00 % | 0.04 % | 3.3 % |
+| with B | 27.5 | 0.00 % | 0.04 % | 4.2 % |
+
+- cam_B's LEDs appear in cam_A's image as two small bright spots left of the target, with reflections in the desk.
+  The whole-image numbers miss them, so the tool now also reports the share of strongly changed pixels.
+- No glare on the target or desk elsewhere. The extra depth with B on is unexplained; these spots may add points.
+- An earlier pair (220836 / 220955, clear bottle) showed 10 % less depth with B on, but the scene shifted between runs.
+- Gap by capture: −5.14, −2.26, +4.04 ms, each after cam_B was replugged or the rig moved. Whether a new capture
+  alone changes it is still open.
+- Not tested yet: cam_B with cam_A on, and other timing gaps. Whether interference depends on the gap is unknown.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

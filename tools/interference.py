@@ -38,6 +38,7 @@ ap.add_argument("together", help="session with the other camera on too")
 ap.add_argument("--cam", default="cam_A", help="camera being checked")
 ap.add_argument("--every", type=int, default=3, help="use every Nth frame")
 ap.add_argument("--sat", type=int, default=250, help="gray level counted as saturated")
+ap.add_argument("--spot", type=int, default=30, help="gray level change counted as a visible spot")
 args = ap.parse_args()
 
 a = stats(args.alone, args.cam, args.every, args.sat)
@@ -46,6 +47,9 @@ print(f"{args.cam}{'':<7}{'brightness':>12}{'saturated %':>13}{'flicker %':>11}"
 print(f"{'alone':<12}{a[0]:>12.1f}{a[1]:>13.2f}{a[2]:>11.2f}")
 print(f"{'with other':<12}{b[0]:>12.1f}{b[1]:>13.2f}{b[2]:>11.2f}")
 print(f"{'change':<12}{b[0] - a[0]:>+12.1f}{b[1] - a[1]:>+13.2f}{b[2] - a[2]:>+11.2f}")
+# the other camera's LEDs show up as small bright spots, which the whole-image numbers above miss
+print(f"pixels changed by over {args.spot} gray levels (middle frames, also counts scene motion): "
+      f"{100 * (np.abs(a[3].astype(np.int16) - b[3]) > args.spot).mean():.3f} %")
 
 out = os.path.join(args.together, args.cam, "interference.png")
 cv2.imwrite(out, np.vstack([a[3], b[3]]))
