@@ -153,6 +153,14 @@ Sessions 221801 (alone) and 221843 (with B), dark flask on the desk, 35 cm from 
   fine comparison against the alone run.
 - Not tested yet: cam_B with cam_A on.
 
+## M7 interference at 180°, cam_A with cam_B on (2026-11-04)
+
+Sessions 223209 (alone) and 223251 (with B), ~70 cm apart, flask between them, gap −4.57 ms: brightness 25.4 both,
+0 % saturated, flicker 0.04 % both, 0.001 % of pixels changed, valid depth 3.5 % alone vs 3.7 % with B.
+
+Not a worst-case result: the flask sits near the centre of both views, so it probably blocks the direct line between
+the cameras. Direct LED exposure at 180° is untested. cam_B with cam_A on is also untested.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
