@@ -161,6 +161,13 @@ Sessions 223209 (alone) and 223251 (with B), ~70 cm apart, flask between them, g
 Not a worst-case result: the flask sits near the centre of both views, so it probably blocks the direct line between
 the cameras. Direct LED exposure at 180° is untested. cam_B with cam_A on is also untested.
 
+## M7 interference at 90°, cam_B with cam_A on (2026-11-06)
+
+Raised, tilted-down rig. Sessions 015040 (B alone) and 015119 (with A), white boxes on the desk: brightness 15.1 → 15.3,
+0 % saturated, flicker 0.64 → 1.08 %, 0.088 % of pixels changed by > 30 gray levels. No visible glare on the scene.
+(Earlier alone run 014719: +0.3 brightness, 0.321 % changed.) The together run had 791 / 783 frames in 10 s (~79 FPS).
+Both directions at 90° are now tested: interference is negligible.
+
 ## M7b merge check at 90° (2026-11-05, `tools/merge_check.py`) — passed on a flat board with depth scale correction
 
 Board session 004009 (hand-held 7 × 10 board, 25 mm squares, 90 s), object session 004211 (10 s; it shows the checkerboard standing on the desk, not a box, so the
