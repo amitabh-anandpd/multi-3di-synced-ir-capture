@@ -24,71 +24,15 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from session_io import load_rows, load_session, read_pair  # noqa: E402
-
-GRID = (9, 6)  # inner corners of a 10 x 7 squares board
-
-
-def rectify_maps(dmap, size, slope, raw_wh, pad=0):
-    """Same as depth_preview.rectify_maps: virtual pinhole of +-slope rays -> raw image pixel maps."""
-    f = size / 2 / slope
-    ax = (np.arange(-pad, size) + 0.5 - size / 2) / f
-    ay = (np.arange(size) + 0.5 - size / 2) / f
-    rx, ry = np.meshgrid(ax, ay)
-    gc = ((rx + 4) / 8 * 63).astype(np.float32)
-    gr = ((4 - ry) / 8 * 63).astype(np.float32)
-    nx = cv2.remap(np.ascontiguousarray(dmap[..., 0]), gc, gr, cv2.INTER_LINEAR)
-    ny = cv2.remap(np.ascontiguousarray(dmap[..., 1]), gc, gr, cv2.INTER_LINEAR)
-    return nx * raw_wh[0] - 0.5, ny * raw_wh[1] + 0.5, f
-
-
-class Cam:
-    def __init__(self, session, name, size, slope, pad=0):
-        self.meta = load_session(session)
-        self.dir = os.path.join(session, name)
-        self.rows = load_rows(self.dir)
-        self.by_id = {int(r["frame_id"]): r for r in self.rows}
-        self.wh = tuple(self.meta["image_size"])
-        cal = self.meta["calibration"][name]
-        self.baseline = cal["right"]["extrinsic"][0][3] - cal["left"]["extrinsic"][0][3]
-        versions = {r["matrix_version"] for r in self.rows}
-        if len(versions) > 1:
-            print(f"{name}: distortion map changed during the session {sorted(versions)}, using the first")
-        dm = np.load(os.path.join(self.dir, f"distortion_v{self.rows[0]['matrix_version']}.npz"))
-        self.maps = []
-        for side in ("left", "right"):
-            mx, my, self.f = rectify_maps(dm[side], size, slope, self.wh, pad)
-            self.maps.append((mx, my))
-        self.c = size / 2
-
-    def rect(self, frame_id):
-        lr = read_pair(self.dir, self.by_id[frame_id], self.wh)
-        return [cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderValue=0) for img, (mx, my) in zip(lr, self.maps)]
-
-
-def find(img):
-    # no CALIB_CB_FAST_CHECK: it rejects these dim IR boards
-    ok, pts = cv2.findChessboardCorners(img, GRID, flags=cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE)
-    if not ok:
-        return None
-    pts = cv2.cornerSubPix(img, pts, (5, 5), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
-    return pts.reshape(-1, 2)
+from stereo import GRID, Cam, board_2d  # noqa: E402
 
 
 def board_3d(cam, frame_id):
-    L, R = cam.rect(frame_id)
-    pl = find(L)
-    if pl is None:
+    lr = board_2d(cam, frame_id)
+    if lr is None:
         return None
-    pr = find(R)
-    if pr is None:
-        return None
-    if np.abs(pl[:, 1] - pr[::-1, 1]).mean() < np.abs(pl[:, 1] - pr[:, 1]).mean():
-        pr = pr[::-1]  # L and R found the grid in opposite orders
-    d = pl[:, 0] - pr[:, 0]
-    if np.abs(pl[:, 1] - pr[:, 1]).max() > 5 or (d <= 0).any():  # coarse distortion map leaves ~2 px row error
-        return None
-    z = cam.f * cam.baseline / d
+    pl, pr = lr
+    z = cam.f * cam.baseline / (pl[:, 0] - pr[:, 0])
     x = (pl[:, 0] + 0.5 - cam.c) / cam.f * z
     y = ((pl[:, 1] + pr[:, 1]) / 2 + 0.5 - cam.c) / cam.f * z
     return np.stack([x, y, z], 1)
@@ -164,7 +108,7 @@ args = ap.parse_args()
 # --- 1. board corners in 3D, per still group
 groups = json.load(open(os.path.join(args.board, "groups.json")))["groups"]
 A, B = Cam(args.board, "cam_A", args.size, args.slope), Cam(args.board, "cam_B", args.size, args.slope)
-cache = os.path.join(args.board, f"board_corners_s{args.stride}_{args.size}_{args.slope}.npz")
+cache = os.path.join(args.board, f"board_corners_s{args.stride}_{args.size}_{args.slope}{'_dense' if A.dense else ''}.npz")
 if os.path.exists(cache):  # corner finding takes minutes; reuse it
     corners = np.load(cache)["corners"]
 else:

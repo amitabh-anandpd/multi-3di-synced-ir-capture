@@ -102,3 +102,95 @@ geometry. A calibration-board session is recorded on the final rig.
 ## Phase 1 done
 M0–M7b pass, M8 works, and STATUS.md holds: FPS alone vs. together, the sync gap distribution,
 the physical sync result, interference per angle, and the merge gap.
+
+---
+
+# Build Plan — Phase 2 (hand reconstruction)
+
+Goal: a merged hand point cloud per frame from both cameras while the hand moves (simultaneous
+capture, 90 FPS), then a MANO hand model fitted to it (pose + shape per frame).
+
+Starting point (STATUS.md): 90° rig, merge gap 4.4–5 mm on static boxes with `--depth-fit`; each
+3Di's depth has an effective baseline of ~71 mm and a ~3 px disparity offset; the cameras run up to
+half a frame (5.6 ms) apart; the 64×64 distortion map leaves ~2 px row error between L and R.
+
+Same rules as phase 1: each milestone has an exit check, results go in STATUS.md.
+
+---
+
+## N0 — Per-unit stereo calibration (`calib_unit.py`)
+- From the board sessions, calibrate each 3Di's left–right pair properly: the rotation between the
+  imagers (the toe-in behind the disparity offset) and any focal/centre correction, on top of LeapC's
+  distortion map.
+- Replace the 64×64 map with a dense one from `LeapPixelToRectilinearEx` (or refine it from the board)
+  so rows line up.
+- Save per serial in `units/<serial>.json`; it belongs to the device, not the rig.
+
+**Exit:** on a board session not used for fitting, squares measure within ±1 % (p10–p90) across the
+view at 20–50 cm, and the L/R row error is under 0.5 px.
+
+## N1 — Rig calibration (`calib_rig.py` → `rig.json`)
+- Move the board-corner and transform code out of `tools/merge_check.py` into a module.
+- A board session gives `rig.json`: camera poses in cam_A's frame, the board session id, the unit
+  calibrations used, and the residuals. Recalibrate whenever the rig moves.
+- `merge_check.py` and later tools read `rig.json`.
+
+**Exit:** board corner residual between cameras median ≤ 2 mm; merge gap on a static matte object
+≤ 3 mm.
+
+## N2 — Record hand sessions + Ultraleap tracking
+- Rig at 90°, both cameras ~25 cm from the hand space (fingers are thin; depth error grows with
+  distance squared), matte cloth on the desk, nobody else in view, Control Panel closed.
+- `capture_multi.py` also saves LeapC's own hand tracking per device (joints, palm, confidence) next
+  to the images. It costs nothing and gives a hand box and a pose to start from.
+- Protocol: a still open hand, a set of still poses (fist, pinch, spread, point), then slow and fast
+  motion. 10–20 s each.
+
+**Exit:** sessions recorded at ≥ 88 FPS on both cameras, tracking saved, hand inside both views.
+
+## N3 — Per-frame depth (`depth.py`)
+- One frame per camera (no multi-frame median: the hand moves). SGBM tuned for hands; run offline.
+- Restrict matching to the hand region (N4) to save time and cut background noise.
+
+**Exit:** on still-hand frames, ≥ 70 % of hand pixels get depth, and the single-frame cloud is within
+2 mm (median) of the 10-frame median cloud. Time per frame recorded.
+
+## N4 — Hand segmentation
+- Start from the Ultraleap hand box, then keep pixels that are bright in IR (skin is) and within a
+  depth band around the palm. Remove the arm past the wrist using the tracked wrist joint.
+
+**Exit:** mask IoU ≥ 0.9 against 20 hand-labelled frames per camera.
+
+## N5 — Motion between the cameras' exposures
+- At 1 m/s a 5 ms gap moves the hand 5 mm. Measure the gap's effect first (still vs moving hand).
+- If it matters: move cam_B's cloud to cam_A's time by interpolating between its two neighbouring
+  frames (optical flow on the IR images, or per-point motion from the tracked joints).
+
+**Exit:** merge gap on moving hands ≤ the still-hand gap + 1 mm.
+
+## N6 — Fused hand cloud (`fuse.py`)
+- Per frame: both clouds into cam_A's frame (`rig.json`), outlier removal, optional ICP refinement
+  limited to a few mm / degrees, written to `<session>/fused/<frame>.ply` (or one `.npz`).
+
+**Exit:** on a still hand, cloud-to-cloud gap median ≤ 3 mm and both cameras cover the back and the
+side of the hand; a moving sequence plays back without visible doubling.
+
+## N7 — MANO fit (`fit_mano.py`)
+- Manual first: register at mano.is.tue.mpg.de and download the model (licence); add PyTorch +
+  `smplx` (or `manotorch`) to requirements.
+- Shape: fit once per person from the still poses. Pose: per frame, start from the previous frame or
+  the Ultraleap joints; minimise point-to-surface distance + joint-angle prior + temporal smoothness.
+
+**Exit:** median point-to-mesh distance ≤ 3 mm on still poses and ≤ 5 mm on motion, with no visible
+jitter. MANO finger lengths within 5 mm of ruler measurements of the person's hand.
+
+## N8 — Evaluation
+- Compare MANO joints with Ultraleap's tracking and with the ruler measurements; check the result
+  per pose type and per speed.
+
+**Exit:** the numbers are in STATUS.md, with the poses and speeds where it fails.
+
+---
+
+## Phase 2 done
+N0–N8 pass: per-frame fused hand clouds and MANO fits for moving hands, with accuracy recorded.

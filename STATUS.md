@@ -232,6 +232,30 @@ Fitted from board square size (lateral size is right, depth is not): disparity =
   the unplugged run (lowest of all pairs), brightness +1.2. So cam_A's LEDs were off.
 - Merged with board 011406 and `--depth-fit`: overlap 35.7 %, gap **4.35** / 12.18 mm median / p90.
 
+## N0 per-unit stereo calibration (2026-11-06, `tools/dense_map.py`, `calib_unit.py`) — rows pass, size not yet
+
+- The 64×64 LeapC distortion map is 1.2 raw px (median) from LeapC's own `LeapRectilinearToPixelEx`, with a
+  +0.6 to +0.75 px vertical bias on the right imagers. `tools/dense_map.py` builds the exact map per imager from the
+  live device into `units/<serial>_dense_800_1.5_256.npz`; `stereo.Cam` uses it when present. With it, the L/R row
+  error drops from 0.7–1.8 px to 0.18–0.26 px median even without any stereo fit.
+- `calib_unit.py` (cv2.stereoCalibrate on the board, fit 011406, test 004009, 25 mm squares) finds a rotation between
+  each unit's imagers, mostly about the vertical axis (toe-in): cam_A 0.16–0.30°, cam_B 0.56–0.68°; baseline 69.5–70.2 mm
+  (LeapC says 63.9 / 65.8); fitted f 254–260 px vs 266.7 from LeapC.
+
+| test session 004009 | squares p10 / median / p90 | row error median / p95 |
+|---|---|---|
+| cam_A LeapC parallel | −4.5 / −3.3 / −1.7 % | 0.26 / 0.93 px |
+| cam_A calibrated (f, centre fitted) | +0.4 / +1.0 / +1.8 % | 0.20 / 0.84 px |
+| cam_B LeapC parallel | −11.8 / −10.9 / −9.5 % | 0.18 / 0.54 px |
+| cam_B calibrated (f, centre fitted) | +0.1 / +0.5 / +1.4 % | 0.17 / 0.65 px |
+
+- Reprojection rms stays ~1 px with every model (fixed K, free K, extra k1/k2, coarse or dense map), so what is left is
+  not lens distortion. A ~+1 % size bias remains on both units; it does not depend on the square value used (that
+  scales everything). Likely causes: a slightly bent board (it is paper on card, hand-held; triangulated corners sit
+  2.4–3.7 mm rms off a plane, about what 0.3 px of disparity noise gives at 40 cm) or corner-finding noise on the
+  dim IR images.
+- `units/<serial>.json` holds the free-K fit (K, R, T per unit).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
