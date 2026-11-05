@@ -161,6 +161,37 @@ Sessions 223209 (alone) and 223251 (with B), ~70 cm apart, flask between them, g
 Not a worst-case result: the flask sits near the centre of both views, so it probably blocks the direct line between
 the cameras. Direct LED exposure at 180° is untested. cam_B with cam_A on is also untested.
 
+## M7b merge check at 90° (2026-11-05, `tools/merge_check.py`) — passed on a flat board with depth scale correction
+
+Board session 004009 (hand-held 7 × 10 board, 25 mm squares, 90 s), object session 004211 (10 s; it shows the checkerboard standing on the desk, not a box, so the
+gap is measured on a flat board; recheck with a real 3D object), rig at 90°,
+~33 cm from the spot. Board seen by both cameras in 175 of 1269 sampled groups, 117 used (board moved < 0.3 mm
+between the two cameras' exposures), board positions spanning 151 × 67 × 139 mm.
+
+| | cam_A square size | cam_B square size | corner residual (median / p95) | object overlap | gap (median / p90) |
+|---|---|---|---|---|---|
+| raw stereo depth | 23.99 mm (−4.0 %) | 22.13 mm (−11.5 %) | 7.57 / 15.42 mm | 69.7 % | 6.82 / 11.05 mm |
+| `--scale-fix` (×1.042, ×1.130) | 25 | 25 | 3.53 / 9.04 mm | 68.5 % | **3.90** / 9.42 mm |
+
+Transform cam_B → cam_A: rotation 93.6°, translation 367 mm (scaled).
+- The stereo depth of both cameras reads short at ~30 cm near the edge of the view, cam_B by 11.5 %. The M3b phone
+  check (−1 to −4 %) was near the centre. The scale fix comes from the board session and is applied unchanged to
+  the separate object session. The cause (baseline, coarse 64 × 64 distortion map, ~2 px row error between L and R) is not known.
+- Earlier attempts failed: 235105 (board propped on the desk, one pose, gap 9 mm) and 002558 (board faced cam_B and sat
+  at the edge of cam_A's view; seen by both in 5 groups).
+- Session 005553 (dark metal flask): 9.8k / 6.3k points, 22.5 % overlap, gap 7.98 mm median. Dark and shiny
+  objects give sparse IR stereo depth.
+- Raised, tilted-down rig (2026-11-06): board 011406, object 011610 (again the board propped on the desk, person in
+  cam_B's view), ~40 cm from the cameras. 44 views used, rotation 90.2°, corner residual 6.23 / 15.13 mm, overlap
+  29.2 %, gap **4.76** / 12.16 mm median / p90 with `--scale-fix`. cam_B still reads 11.8 % short, cam_A 3.2 %.
+  Session 000248 (Control Panel open, ~47 FPS, board ~45 cm and rarely still) gave only 3 usable views.
+- Session 012845 ("book", same calibration 011406): the scene was the board standing on the desk plus a metal can
+  in front, no book. Overlap 20.5 %, gap 6.48 / 12.89 mm.
+- Session 013241 (small white cardboard boxes on the desk, ~45 cm, calibration 011406, person faintly in cam_B):
+  first real 3D object. 84k / 52k points, overlap 32.8 %, gap **5.09** / 12.12 mm median / p90 with `--scale-fix`.
+  At the 5 mm target; the overlap includes the desk. Closer placement (20–25 cm) not tried yet.
+- The board corners are found only with OpenCV's `CALIB_CB_FAST_CHECK` turned off and with a ±56° rectified view.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
