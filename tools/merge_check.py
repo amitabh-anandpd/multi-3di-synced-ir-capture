@@ -148,6 +148,8 @@ ap.add_argument("--still", type=float, default=0.3,
                 help="mm: max board motion in the time between cam_A's and cam_B's frame of a group")
 ap.add_argument("--scale-fix", action="store_true",
                 help="scale each camera's points so the board squares measure --square (corrects stereo depth scale)")
+ap.add_argument("--depth-fit", action="store_true",
+                help="fit each camera's effective baseline and disparity offset from the board (better than --scale-fix)")
 ap.add_argument("--size", type=int, default=800, help="rectified image size, px")
 ap.add_argument("--slope", type=float, default=1.5, help="half field of view as ray slope (1.5 = +-56 deg)")
 ap.add_argument("--frames", type=int, default=10, help="object: frames fused per camera")
@@ -197,16 +199,46 @@ print(f"board positions span {spread[0]:.0f} x {spread[1]:.0f} x {spread[2]:.0f}
 if spread.max() < 50:
     print("WARNING: the board hardly moved. One pose gives a weak fit; record it again moving it through ~15 poses.")
 
-scale = {}
-for name, k in (("cam_A", 0), ("cam_B", 1)):
-    p = np.stack([q[k].reshape(GRID[1], GRID[0], 3) for q in pairs])
-    edges = np.concatenate([np.linalg.norm(np.diff(p, axis=1), axis=-1).ravel(),
-                            np.linalg.norm(np.diff(p, axis=2), axis=-1).ravel()])
-    scale[name] = args.square / np.median(edges) if args.scale_fix else 1.0
-    print(f"{name}: square size median {np.median(edges):.2f} mm vs {args.square} measured "
-          f"({(np.median(edges) / args.square - 1) * 100:+.1f} %), depth {np.median(p[..., 2]):.0f} mm"
-          + (f", scaled x{scale[name]:.3f}" if args.scale_fix else ""))
-pairs = [(pa * scale["cam_A"], pb * scale["cam_B"]) for pa, pb in pairs]
+def view_stats(p):
+    """Per board view: median square size and median depth. p: (views, 54, 3)."""
+    p = p.reshape(len(p), GRID[1], GRID[0], 3)
+    e = np.concatenate([np.linalg.norm(np.diff(p, axis=1), axis=-1).reshape(len(p), -1),
+                        np.linalg.norm(np.diff(p, axis=2), axis=-1).reshape(len(p), -1)], 1)
+    return np.median(e, 1), np.median(p[..., 2].reshape(len(p), -1), 1)
+
+
+def correct(pts, c):
+    """Apply one camera's depth correction, moving each point along its ray."""
+    if c["mode"] == "scale":
+        return pts * c["scale"]
+    if c["mode"] == "depth":
+        d = c["f"] * c["baseline"] / pts[..., 2]  # disparity, px
+        return pts * (c["fb"] / (d - c["d0"]) / pts[..., 2])[..., None]
+    return pts
+
+
+fix = {}
+for name, k, cam in (("cam_A", 0, A), ("cam_B", 1, B)):
+    sq, z = view_stats(corners[seen][:, k])  # every view this camera saw with the other; stillness doesn't matter here
+    c = {"mode": "none"}
+    if args.depth_fit:
+        # depth from square size (lateral size is right, depth is not): z_true = z * square / measured square.
+        # Fit disparity = fb / z_true + d0, i.e. an effective baseline and a disparity offset (imager toe-in).
+        zt = z * args.square / sq
+        (fb, d0), *_ = np.linalg.lstsq(np.stack([1 / zt, np.ones_like(zt)], 1), cam.f * cam.baseline / z, rcond=None)
+        c = {"mode": "depth", "f": cam.f, "baseline": cam.baseline, "fb": fb, "d0": d0}
+        note = f", depth fit: baseline {fb / cam.f:.1f} mm (nominal {cam.baseline:.1f}), disparity offset {d0:+.2f} px"
+    elif args.scale_fix:
+        c = {"mode": "scale", "scale": args.square / np.median(sq)}
+        note = f", scaled x{c['scale']:.3f}"
+    else:
+        note = ""
+    fix[name] = c
+    sq2, _ = view_stats(correct(corners[seen][:, k], c))
+    print(f"{name}: square size median {np.median(sq):.2f} mm vs {args.square} measured "
+          f"({(np.median(sq) / args.square - 1) * 100:+.1f} %, after correction {np.percentile(sq2 / args.square - 1, 10) * 100:+.1f} "
+          f"to {np.percentile(sq2 / args.square - 1, 90) * 100:+.1f} % p10-p90), depth {np.median(z):.0f} mm{note}")
+pairs = [(correct(pa, fix["cam_A"]), correct(pb, fix["cam_B"])) for pa, pb in pairs]
 
 # --- 2. corner order by consensus, then one fit over all agreeing views
 cands = []  # per view: [(R, t, pb_ordered), (R, t, reversed)]
@@ -245,7 +277,8 @@ clouds = {}
 for name in ("cam_A", "cam_B"):
     cam = Cam(args.object, name, args.size, args.slope, pad=args.max_disp)
     clouds[name] = sgbm_cloud(cam, [g["frames"][name] for g in sel], args.max_disp, args.zmin, args.zmax,
-                              args.min_gray, args.min_hits, args.max_disp) * scale[name]
+                              args.min_gray, args.min_hits, args.max_disp)
+    clouds[name] = correct(clouds[name], fix[name])
 a, b = clouds["cam_A"], clouds["cam_B"] @ R.T + t
 d, _ = cKDTree(a).query(b, distance_upper_bound=args.overlap)
 ov = np.isfinite(d)
@@ -257,6 +290,7 @@ out = os.path.join(args.object, "merge")
 os.makedirs(out, exist_ok=True)
 write_ply(os.path.join(out, "merged.ply"), np.vstack([a, b]),
           np.vstack([np.tile([255, 60, 60], (len(a), 1)), np.tile([60, 255, 60], (len(b), 1))]))
-json.dump({"board_session": args.board, "R": R.tolist(), "t_mm": t.tolist(), "views": len(src), "scale": scale,
+json.dump({"board_session": args.board, "R": R.tolist(), "t_mm": t.tolist(), "views": len(src),
+           "depth_correction": {n: {k: float(v) if k != "mode" else v for k, v in c.items()} for n, c in fix.items()},
            "corner_residual_median_mm": float(np.median(res))}, open(os.path.join(out, "transform.json"), "w"), indent=2)
 print("wrote", out)

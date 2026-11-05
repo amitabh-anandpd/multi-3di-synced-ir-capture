@@ -199,6 +199,26 @@ Transform cam_B → cam_A: rotation 93.6°, translation 367 mm (scaled).
   At the 5 mm target; the overlap includes the desk. Closer placement (20–25 cm) not tried yet.
 - The board corners are found only with OpenCV's `CALIB_CB_FAST_CHECK` turned off and with a ±56° rectified view.
 
+## Stereo depth error per device (2026-11-06, `merge_check.py --depth-fit`)
+
+Fitted from board square size (lateral size is right, depth is not): disparity = f · b_eff / z_true + d0.
+
+| | effective baseline (nominal) | disparity offset at f = 266.7 px | board 004009 / 011406 |
+|---|---|---|---|
+| cam_A (…6195) | 71.1 / 70.9 mm (63.9) | −3.82 / −3.18 px | fit residual 0.40 / 0.32 px |
+| cam_B (…6230) | 70.4 / 70.8 mm (65.8) | +2.73 / +2.38 px | fit residual 0.17 / 0.25 px |
+
+- The same values come out on two different rigs, so they belong to the devices. The error depends on depth
+  (square-size error vs depth correlation +0.71 to +0.90 for cam_A, −0.70 to −0.85 for cam_B), so a pure scale can't
+  remove it. A disparity offset of ~3 px is ~0.6° of toe between each unit's L and R imagers, which LeapC's
+  extrinsics (identity rotation) don't report; the ~2 px L/R row mismatch also points at imager rotation.
+- After the fit, board squares measure within −2 to +1 % (p10–p90) on both cameras.
+- Merge gap (median, mm): 004211 raw 6.82 / scale 3.87 / depth fit 3.51; 013241 7.09 / 5.45 / 4.46;
+  013839 6.96 / 5.39 / 4.99. (`--scale-fix` now uses every board view, not only still ones, so its numbers differ
+  slightly from the M7b section.)
+- Remaining corner residual 3–5 mm median. A full per-unit stereo calibration from the board (rotation between L and R,
+  dense distortion map) is the proper fix for phase 2.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
