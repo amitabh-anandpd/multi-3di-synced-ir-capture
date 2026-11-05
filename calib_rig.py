@@ -29,6 +29,7 @@ ap.add_argument("--stride", type=int, default=6)
 ap.add_argument("--still", type=float, default=0.3, help="mm the board may move between the two exposures")
 ap.add_argument("--overlap", type=float, default=15)
 ap.add_argument("--frames", type=int, default=10, help="--check: frames fused per camera")
+ap.add_argument("--force", action="store_true", help="make this the current rig.json even from a weak board session")
 args = ap.parse_args()
 
 meta = json.load(open(os.path.join(args.board, "session.json")))
@@ -110,8 +111,13 @@ rig = {"board_session": args.board, "reference": args.ref, "views": len(src),
        "note": "X_ref = R @ X_cam + t, each X in its unit's rectified-left frame (stereo.Unit), mm"}
 path = os.path.join(args.board, "rig.json")
 json.dump(rig, open(path, "w"), indent=2)
-shutil.copy(path, "rig.json")
-print("wrote", path, "and rig.json")
+weak = len(src) < 20 or spread.max() < 50
+if weak and not args.force:
+    print(f"wrote {path}; NOT copied to ./rig.json: weak board session ({len(src)} views, positions span "
+          f"{spread.max():.0f} mm; want >= 20 views over >= 50 mm). --force copies it anyway.")
+else:
+    shutil.copy(path, "rig.json")
+    print("wrote", path, "and rig.json")
 
 # --- merge check on static objects
 for s in args.check:

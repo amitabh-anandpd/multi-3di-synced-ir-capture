@@ -274,6 +274,22 @@ Board 011406 with the N0 unit calibrations: 260 views seen by both, 85 still vie
   the triangulated corners within 1 mm (checked on 8 board frames), so the cloud path is consistent.
 - Next test at the N2 distance (~25 cm) with a rigid board: noise should drop ~3× (z²).
 
+### N1 at ~25 cm (2026-11-06, board 033648 on a rigid backing, boxes 033854) — current rig.json
+
+- 243 views seen by both, 97 used, positions spanning 208 × 140 × 142 mm, rotation 89.6°, translation 270 mm.
+- Corner residual **2.64** / 9.38 mm median / p95 (3.82 at ~40 cm; target 2). Boxes gap **4.80** / 12.58 mm; noise
+  floor (each camera against itself) 1.63 / 1.90 mm at ~250 mm.
+- The ~3 mm excess over the noise floor did not shrink with distance, so it is systematic. The desk, seen by both near
+  the lower edge of their views where the board never went, comes out as two planes 5.7° apart (cam_B's desk points
+  sit 9.25 mm IQR off cam_A's plane vs 1.6–1.95 mm about their own). The gap on and off the desk is the same (4.9 / 4.8).
+- Units refitted with LeapC's focal fixed (rotation + baseline only): residual 3.94, gap 5.24, so the free-focal units
+  stay.
+- Board 032231 (cameras not moved, board small and seen side-on by cam_A) gave only 7 still views in one spot; its rig
+  was 2.2° off. `calib_rig.py` now refuses to make a rig from < 20 views or < 50 mm of board positions the current
+  `rig.json` unless `--force`.
+- Not resolved: accuracy away from where the board was. Options: board views covering the edges of both views and a
+  joint bundle adjustment of all four imagers, or an ICP refinement of the rig on the scene (N6).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
