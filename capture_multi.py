@@ -9,6 +9,8 @@ camera appends them to cam_X/frames.bin, so slow disk writes show up as queue_de
 not dropped frames. One file per camera: creating ~360 PNGs/s cost ~15-20 % FPS (M4).
 Read frames back with session_io.py; export PNGs with tools/export_png.py.
 Ctrl+C stops early; queued frames are still written.
+LeapC's own hand tracking goes to cam_X/tracking.csv (one row per hand per tracking frame,
+columns in leapc.HAND_COLUMNS, LeapC tracking space in mm).
 
 --sequential (M8, static scenes only): records each camera in turn with the others off, so
 their IR LEDs can't reach it. LeapC can't switch off one device (LeapSetPause pauses all), so
@@ -83,7 +85,7 @@ def record(names, session, duration, meta, wait_s=5.0):
         t = threading.Thread(target=writer, args=(cam_dir, q))
         t.start()
         cams[d["id"]] = {"name": name, "dir": cam_dir, "q": q, "thread": t, "mver": None, "n": 0, "max_q": 0,
-                         "handle": d["handle"]}
+                         "handle": d["handle"], "track": []}
         meta["cameras"][name] = d["serial"]
         meta["baseline_um"][name] = d["baseline_um"]
     print(f"Recording {sorted(c['name'] for c in cams.values())} for {duration:g}s -> {session}  (Ctrl+C to stop)")
@@ -108,6 +110,10 @@ def record(names, session, duration, meta, wait_s=5.0):
                 continue
             if msg.type == leapc.EVT_DEVICE_LOST:
                 print("WARNING: a device was lost during capture")
+            if msg.type == leapc.EVT_TRACKING and msg.device_id in cams:  # LeapC's own hand tracking
+                fid, ts, rows = leapc.hands(msg)
+                cams[msg.device_id]["track"] += [[fid, ts, leapc.lib.LeapGetNow()] + r for r in rows]
+                continue
             if msg.type != leapc.EVT_IMAGE or msg.device_id not in cams:
                 continue
             host_ts = leapc.lib.LeapGetNow()
@@ -138,7 +144,12 @@ def record(names, session, duration, meta, wait_s=5.0):
         c["q"].put(None)
     for c in cams.values():
         c["thread"].join()
-        print(f"{c['name']}: {c['n']} frames, max queue depth {c['max_q']}")
+        with open(os.path.join(c["dir"], "tracking.csv"), "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["frame_id", "device_ts_us", "host_ts_us"] + leapc.HAND_COLUMNS)
+            w.writerows(c["track"])
+        print(f"{c['name']}: {c['n']} frames, max queue depth {c['max_q']}, "
+              f"{len({r[0] for r in c['track']})} tracking frames with a hand")
         meta["frames"][c["name"]] = c["n"]
     return ok
 

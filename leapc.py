@@ -25,6 +25,7 @@ EVT_CONNECTION = 1
 EVT_DEVICE = 3
 EVT_DEVICE_FAILURE = 4
 EVT_POLICY = 5
+EVT_TRACKING = 0x100
 EVT_DEVICE_LOST = 0x104
 EVT_DROPPED_FRAME = 0x108
 EVT_IMAGE = 0x109
@@ -75,6 +76,37 @@ class LEAP_IMAGE_EVENT(_Packed):
 
 class LEAP_VECTOR(_Packed):
     _fields_ = [("x", c_float), ("y", c_float), ("z", c_float)]
+
+
+class LEAP_QUATERNION(_Packed):
+    _fields_ = [("x", c_float), ("y", c_float), ("z", c_float), ("w", c_float)]
+
+
+class LEAP_BONE(_Packed):
+    _fields_ = [("prev_joint", LEAP_VECTOR), ("next_joint", LEAP_VECTOR), ("width", c_float),
+                ("rotation", LEAP_QUATERNION)]
+
+
+class LEAP_DIGIT(_Packed):
+    _fields_ = [("finger_id", c_int32), ("bones", LEAP_BONE * 4), ("is_extended", c_uint32)]
+
+
+class LEAP_PALM(_Packed):
+    _fields_ = [("position", LEAP_VECTOR), ("stabilized_position", LEAP_VECTOR), ("velocity", LEAP_VECTOR),
+                ("normal", LEAP_VECTOR), ("width", c_float), ("direction", LEAP_VECTOR),
+                ("orientation", LEAP_QUATERNION)]
+
+
+class LEAP_HAND(_Packed):
+    _fields_ = [("id", c_uint32), ("flags", c_uint32), ("type", c_int32), ("confidence", c_float),
+                ("visible_time", c_uint64), ("pinch_distance", c_float), ("grab_angle", c_float),
+                ("pinch_strength", c_float), ("grab_strength", c_float), ("palm", LEAP_PALM),
+                ("digits", LEAP_DIGIT * 5), ("arm", LEAP_BONE)]
+
+
+class LEAP_TRACKING_EVENT(_Packed):
+    _fields_ = [("info", LEAP_FRAME_HEADER), ("tracking_frame_id", c_int64), ("nHands", c_uint32),
+                ("pHands", POINTER(LEAP_HAND)), ("framerate", c_float)]
 
 
 class LEAP_CONNECTION_MESSAGE(_Packed):
@@ -156,6 +188,28 @@ def connect(settle_s=1.5, timeout_s=5.0, serials=None):
     if not connected:
         raise RuntimeError("No connection to the Ultraleap Tracking Service. Is it running?")
     return conn, devices
+
+
+HAND_COLUMNS = (["hand_id", "type", "confidence", "palm_width"]
+                + [f"{k}_{a}" for k in ("palm", "normal", "direction", "wrist", "elbow") for a in "xyz"]
+                + [f"j{i:02d}_{a}" for i in range(25) for a in "xyz"])
+"""Joints j00..j24: per finger (thumb, index, middle, ring, pinky) the metacarpal base, MCP, PIP, DIP and tip.
+LeapC tracking space: mm, device origin, y up from the device, z towards the user (thumb metacarpal has zero length)."""
+
+
+def hands(msg):
+    """Hands of one tracking event: (frame_id, timestamp, [row per hand in HAND_COLUMNS order])."""
+    ev = ctypes.cast(msg.pointer, POINTER(LEAP_TRACKING_EVENT)).contents
+    rows = []
+    for k in range(ev.nHands):
+        h = ev.pHands[k]
+        v = lambda p: [p.x, p.y, p.z]  # noqa: E731
+        row = [h.id, "left" if h.type == 0 else "right", h.confidence, h.palm.width]
+        row += v(h.palm.position) + v(h.palm.normal) + v(h.palm.direction) + v(h.arm.next_joint) + v(h.arm.prev_joint)
+        for d in h.digits:
+            row += v(d.bones[0].prev_joint) + sum((v(b.next_joint) for b in d.bones), [])
+        rows.append(row)
+    return ev.info.frame_id, ev.info.timestamp, rows
 
 
 def image_event(msg):
