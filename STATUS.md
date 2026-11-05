@@ -290,6 +290,26 @@ Board 011406 with the N0 unit calibrations: 260 views seen by both, 85 still vie
 - Not resolved: accuracy away from where the board was. Options: board views covering the edges of both views and a
   joint bundle adjustment of all four imagers, or an ICP refinement of the rig on the scene (N6).
 
+## N2 hand sessions (2026-11-06, rig 033648) — recorded, FPS below target
+
+`capture_multi.py` now writes LeapC's hand tracking to `cam_X/tracking.csv` (25 joints + palm, wrist, elbow per hand;
+struct sizes checked against LeapC.h 6.2.0).
+
+| session | pose | FPS A / B | hand tracked A / B | palm distance A / B (LeapC) |
+|---|---|---|---|---|
+| 035647 | open, still | 87.5 / 87.5 | 0 / 96 % | – / 321 mm |
+| 035726 | fist, still | 85.6 / 85.5 | 100 / 100 % | 200 / 252 mm |
+| 035752 | pinch, still | 82.6 / 82.9 | 100 / 100 % | 200 / 258 mm |
+| 035809 | spread, still | 85.1 / 84.6 | 100 / 100 % | 201 / 253 mm |
+| 035830 | point, still | 79.2 / 79.0 | 100 / 100 % | 273 / 345 mm |
+| 035901 | slow motion, 20 s | 87.3 / 87.6 | 100 / 100 % | 261 / 326 mm |
+| 035942 | fast motion, 20 s | 85.4 / 85.4 | 100 / 100 % | 253 / 319 mm |
+
+- No frame-id gaps (stream_health): the cameras delivered fewer frames, nothing was dropped. Plugged in (battery
+  status 2). Cause of 79–87 FPS not known yet (exit asks ≥ 88). Timestamps are exact, so pairing is unaffected.
+- The hand is visible in both views in all sessions (contact sheet checked); the person's head and body are in view too.
+- cam_A's LeapC tracking found no hand in "open still" although the hand is in its image.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
