@@ -111,3 +111,97 @@ def board_object_points(square):
     g = np.zeros((GRID[0] * GRID[1], 3), np.float32)
     g[:, :2] = np.mgrid[0:GRID[0], 0:GRID[1]].T.reshape(-1, 2) * square
     return g
+
+
+def unit_path(serial):
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "units", f"{serial}.json")
+
+
+class Unit:
+    """One 3Di with its N0 stereo calibration (units/<serial>.json, calib_unit.py).
+
+    Works on the LeapC pinhole images of stereo.Cam. Its own frame is the rectified left imager:
+    x right, y down, z forward, mm; disparity d gives z = f * baseline / d.
+    """
+
+    def __init__(self, serial):
+        import json
+        u = json.load(open(unit_path(serial)))
+        self.serial, self.size, self.slope = serial, u["size"], u["slope"]
+        self.K1, self.K2 = np.array(u["K_left"]), np.array(u["K_right"])
+        self.D1 = np.array(u.get("D_left", np.zeros(5)))
+        self.D2 = np.array(u.get("D_right", np.zeros(5)))
+        R, T = np.array(u["R"]), np.array(u["T_mm"]).reshape(3, 1)
+        self.R1, self.R2, self.P1, self.P2, *_ = cv2.stereoRectify(
+            self.K1, self.D1, self.K2, self.D2, (self.size, self.size), R, T, alpha=0, flags=cv2.CALIB_ZERO_DISPARITY)
+        self.f, self.cx, self.cy = self.P1[0, 0], self.P1[0, 2], self.P1[1, 2]
+        self.baseline = -self.P2[0, 3] / self.P2[0, 0]
+
+    def triangulate(self, pl, pr):
+        """Corners (n, 2) on the LeapC pinhole L and R images -> (n, 3) mm in this unit's frame."""
+        ul = cv2.undistortPoints(pl.reshape(-1, 1, 2).astype(np.float64), self.K1, self.D1, R=self.R1, P=self.P1)
+        ur = cv2.undistortPoints(pr.reshape(-1, 1, 2).astype(np.float64), self.K2, self.D2, R=self.R2, P=self.P2)
+        ul, ur = ul.reshape(-1, 2), ur.reshape(-1, 2)
+        z = self.f * self.baseline / (ul[:, 0] - ur[:, 0])
+        return np.stack([(ul[:, 0] - self.cx) / self.f * z, ((ul[:, 1] + ur[:, 1]) / 2 - self.cy) / self.f * z, z], 1)
+
+    def raw_maps(self, cam, pad):
+        """Raw-image pixel maps for this unit's rectified L and R views, with `pad` columns on the left.
+
+        cam: stereo.Cam built with the same size / slope and pad >= 0 (its maps start at pinhole x = -cam_pad)."""
+        cam_pad = cam.maps[0][0].shape[1] - self.size
+        out = []
+        for K, D, Rr, P, (mx, my) in ((self.K1, self.D1, self.R1, self.P1, cam.maps[0]),
+                                      (self.K2, self.D2, self.R2, self.P2, cam.maps[1])):
+            Pp = P.copy()
+            Pp[0, 2] += pad  # padded output: column j shows rectified x = j - pad
+            px, py = cv2.initUndistortRectifyMap(K, D, Rr, Pp[:, :3], (self.size + pad, self.size), cv2.CV_32FC1)
+            out.append((cv2.remap(mx, px + cam_pad, py, cv2.INTER_LINEAR, borderValue=-1),
+                        cv2.remap(my, px + cam_pad, py, cv2.INTER_LINEAR, borderValue=-1)))
+        return out
+
+    def cloud(self, cam, frame_ids, max_disp=256, zmin=150, zmax=600, min_gray=40, min_hits=0.3, block=5):
+        """Median-of-frames SGBM point cloud (n, 3) mm in this unit's frame, and the gray value of each point."""
+        maps = self.raw_maps(cam, max_disp)
+        sgbm = cv2.StereoSGBM_create(minDisparity=0, numDisparities=max_disp, blockSize=block, P1=8 * block ** 2,
+                                     P2=32 * block ** 2, uniquenessRatio=10, speckleWindowSize=100, speckleRange=2,
+                                     mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY)
+        disps = []
+        for i in frame_ids:
+            raw = read_pair(cam.dir, cam.by_id[i], cam.wh)
+            L, R = [cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderValue=0) for img, (mx, my) in zip(raw, maps)]
+            d = sgbm.compute(L, R).astype(np.float32)[:, max_disp:] / 16
+            d[d <= 0] = np.nan
+            disps.append(d)
+            ref = L[:, max_disp:]
+        stack = np.stack(disps)
+        keep = np.isfinite(stack).mean(0) >= min_hits
+        disp = np.zeros_like(disps[0])
+        disp[keep] = np.nanmedian(stack[:, keep], axis=0)
+        v, u = np.indices(disp.shape)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            z = self.f * self.baseline / disp
+        ok = (disp > 0) & (z > zmin) & (z < zmax) & (ref >= min_gray)
+        pts = np.stack([(u - self.cx) / self.f * z, (v - self.cy) / self.f * z, z], -1)[ok]
+        return pts, ref[ok]
+
+
+def kabsch(src, dst):
+    """R, t minimising |R @ src + t - dst|."""
+    cs, cd = src.mean(0), dst.mean(0)
+    u, _, vt = np.linalg.svd((src - cs).T @ (dst - cd))
+    s = np.diag([1, 1, np.sign(np.linalg.det(vt.T @ u.T))])
+    R = vt.T @ s @ u.T
+    return R, cd - R @ cs
+
+
+def angle_deg(R):
+    return np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))
+
+
+def write_ply(path, xyz, rgb):
+    xyz = xyz * [1, -1, -1]  # flip y / z so viewers show it upright (as depth_preview.py)
+    with open(path, "w") as fh:
+        fh.write(f"ply\nformat ascii 1.0\nelement vertex {len(xyz)}\nproperty float x\nproperty float y\n"
+                 "property float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n")
+        np.savetxt(fh, np.hstack([xyz, rgb]), fmt="%.2f %.2f %.2f %d %d %d")

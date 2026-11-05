@@ -256,6 +256,24 @@ Fitted from board square size (lateral size is right, depth is not): disparity =
   dim IR images.
 - `units/<serial>.json` holds the free-K fit (K, R, T per unit).
 
+## N1 rig calibration (2026-11-06, `calib_rig.py` → `rig.json`) — code done, exit not met at ~40 cm
+
+Board 011406 with the N0 unit calibrations: 260 views seen by both, 85 still views used, rotation 87.1°.
+
+| | corner residual median / p95 | gap 013241 | gap 021241 (sequential) | gap 013839 |
+|---|---|---|---|---|
+| `--depth-fit` (M7b tool) | 4.85 / 13.03 mm | 4.46 | 4.35 | 4.99 |
+| units + rig (N1) | **3.82** / 10.99 mm | 5.13 | 5.30 | 4.74 |
+| units + rig, +1 % size bias removed | 3.63 / 11.02 mm | 5.07 | 5.23 | 4.69 |
+
+- The rig itself is precise: fitting on random halves of the views gives rigs 0.09° / 0.21 mm apart at the board.
+- Corner residual grows with distance (2.86 mm under 35 cm, 3.24 at 35–45, 4.77 beyond 45 cm), as triangulation noise
+  does (≈ z² / (f·b) ≈ 10 mm per px of disparity at 44 cm). The 2 mm target is below the noise at this distance.
+- Gap noise floor: one camera against itself (10 frames vs 10 others) gives 1.65–2.29 mm median. The two cameras sit
+  ~3 mm above that; not explained yet (SGBM on surfaces seen at a slant, per-unit accuracy). SGBM clouds agree with
+  the triangulated corners within 1 mm (checked on 8 board frames), so the cloud path is consistent.
+- Next test at the N2 distance (~25 cm) with a rigid board: noise should drop ~3× (z²).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
