@@ -219,6 +219,19 @@ Fitted from board square size (lateral size is right, depth is not): disparity =
 - Remaining corner residual 3–5 mm median. A full per-unit stereo calibration from the board (rotation between L and R,
   dense distortion map) is the proper fix for phase 2.
 
+## M8 sequential mode (2026-11-06, `capture_multi.py --sequential`) — passed
+
+- LeapC 6.2.0 has no per-device LED or pause control (`LeapSetPause` pauses the whole service; checked the full
+  function list in LeapC.h). Instead the other 3Dis are disabled in Windows with `pnputil /disable-device`
+  (instance id `USB\VID_2936&PID_1202\<serial>`, needs an Administrator terminal) and re-enabled afterwards
+  (also on error / Ctrl+C). Without admin rights it prompts to unplug / replug. `pnputil` exits non-zero for
+  "Device is already enabled", which is treated as success.
+- `pair_frames.py` pairs a sequential session by time since each camera's first frame.
+- Session 021241 (white boxes, 10 s per camera, admin terminal): 898 / 837 frames; both devices back to OK afterwards.
+  cam_B flicker 0.66 % vs 0.64 % unplugged (015040) and 1.08 % with cam_A on (015119); 0.053 % of pixels changed vs
+  the unplugged run (lowest of all pairs), brightness +1.2. So cam_A's LEDs were off.
+- Merged with board 011406 and `--depth-fit`: overlap 35.7 %, gap **4.35** / 12.18 mm median / p90.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

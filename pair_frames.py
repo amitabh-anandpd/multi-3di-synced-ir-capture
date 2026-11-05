@@ -31,6 +31,9 @@ others = [c for c in cams if c != ref]
 if not others:
     raise SystemExit(f"{session} has only {ref}; pairing needs two or more cameras.")
 ts = {c: np.array([int(r["device_ts_us"]) for r in load_rows(os.path.join(session, c))], np.int64) for c in cams}
+if meta.get("mode") == "sequential":  # cameras recorded one after another (static scene): pair by time since start
+    ts = {c: t - t[0] for c, t in ts.items()}
+    print("sequential session: pairing by time since each camera's first frame (gaps below are not real sync)")
 ids = {c: np.array([int(r["frame_id"]) for r in load_rows(os.path.join(session, c))], np.int64) for c in cams}
 
 period = np.median(np.diff(ts[ref]))
