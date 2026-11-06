@@ -310,6 +310,25 @@ struct sizes checked against LeapC.h 6.2.0).
 - The hand is visible in both views in all sessions (contact sheet checked); the person's head and body are in view too.
 - cam_A's LeapC tracking found no hand in "open still" although the hand is in its image.
 
+## N3 per-frame depth (2026-11-06, `depth.py`) — passed
+
+Still-hand sessions 035726, 035752, 035809, 035830, 035647 (cam_A of 035647 skipped: no LeapC tracking), 20 frames per
+camera. Hand mask: LeapC joints projected into each unit's rectified image (bone lines 20 mm wide, thumb 24, palm
+polygon), kept where IR-bright and not > 80 mm behind the joints. The LeapC tracking space maps to a unit's frame as
+(x, y, z)_unit = (−x, z, y)_leap with the origin at +baseline/2 (found by fitting joint depth to the SGBM depth;
+joints land on pixels with gray 102–114). Each frame is compared with the median of its 10 neighbours (±55 ms), since
+a hand held in the air drifts over 10 s (against one mid-session median the error read 1–47 mm).
+
+| SGBM setting | depth on hand pixels | single-frame vs local median, median abs | time per frame per camera, full / hand box |
+|---|---|---|---|
+| block 5, 3-way, uniqueness 10 | 78.4 % | 0.84 mm | 85 / 6 ms |
+| block 7, 3-way, uniqueness 10 | 78.1 % | 0.73 mm | 84 / 6 ms |
+| **block 5, 3-way, uniqueness 5** (default) | **84.6 %** | 0.85 mm | 86 / 6 ms |
+
+- Matching only the hand box gives the same depth (0.00 mm difference) in ~6 ms instead of ~85 ms.
+- cam_A gets depth on fewer hand pixels (56–74 %) than cam_B (92–99 %); the hand is closer to cam_A (≈180–200 mm).
+- This measures single-frame noise, not accuracy (accuracy is the rig / unit calibration, N0–N1).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
