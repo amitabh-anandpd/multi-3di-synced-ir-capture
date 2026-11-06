@@ -1,3 +1,6 @@
 # Also needs the Ultraleap Tracking Software (provides LeapC.dll). No compiled bindings needed.
 numpy
 opencv-python
+scipy
+torch
+smplx

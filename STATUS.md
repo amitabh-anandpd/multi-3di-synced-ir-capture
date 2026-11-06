@@ -382,6 +382,32 @@ Single-frame hand clouds (segment.py) of both cameras merged with rig.json (0336
 - Playback (fused/playback.mp4, front = cam_A view and side views) shows one hand, no doubling, in the fast-motion
   session; cam_A sees this hand nearly edge-on and its points form depth layers.
 
+## N7 MANO fit (2026-11-07, `fit_mano.py`) — accuracy passes; finger lengths only roughly checkable
+
+Setup: MANO downloaded by the user into `mano/` (git-ignored, licence); `tools/convert_mano.py` turns the chumpy
+pickles into plain numpy (chumpy does not install on Python 3.11). torch 2.13 (CPU) + smplx.
+Hand: left (cam_A's LeapC says left in every frame; cam_B calls it right in some fist / pinch frames).
+
+- Shape (betas) from 12 frames of fist, pinch and spread (fused): point-to-mesh 2.60 mm median (27 s) → `mano_shape.json`.
+- Per frame: start from the previous frame (first frame from LeapC joints), point-to-plane at the nearest MANO
+  vertex + weak LeapC joint pull + pose prior + smoothness; ~0.9 s per frame on CPU. Offline Gaussian smoothing of
+  pose / orientation / position (`--post SIGMA`).
+
+| session | frames | point-to-mesh as fitted | smoothed | jitter (joint acceleration) median / p95, as fitted → smoothed |
+|---|---|---|---|---|
+| 035809 spread, still (every 3rd frame) | 268 | 2.43 mm | 2.41 mm (σ 2) | 2.13 / 8.66 → 0.10 / 0.36 mm/frame² |
+| 035942 fast motion (every 2nd frame) | 804 | 3.07 mm | 3.17 mm (σ 1) | 4.35 / 15.37 → 1.70 / 6.14 mm/frame² |
+
+σ 2 on fast motion: 3.51 mm (lags the motion). Exit: ≤ 3 mm still ✓, ≤ 5 mm motion ✓. Overlay videos:
+`<session>/mano/overlay.mp4`; the mesh sits on the points in front and side views.
+
+Finger lengths. The user measured on the palm side, from the crease at the finger base to the tip: index 55, middle
+63, ring 60, pinky 50, thumb 35 mm (thumb: from its last joint), palm width 78 mm (outside edges). MANO has joints, not
+creases; with the crease taken halfway along the proximal phalanx: index 65 (+10), middle 66 (+3), ring 65 (+5),
+pinky 50 (0); thumb last joint → tip 37 (+2). Moving the assumed crease by a quarter of the bone changes these by
+~8 mm, so ruler lengths can't check better than ~±5 mm. MANO knuckle-centre width 64 mm (not comparable to 78 outside).
+MANO MCP → tip: 82 / 83 / 79 / 61 mm; LeapC's own: 70 / 75 / 67 / 57 mm.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
