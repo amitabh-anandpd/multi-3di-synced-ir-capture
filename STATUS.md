@@ -366,6 +366,22 @@ Single-frame hand clouds (segment.py) of both cameras merged with rig.json (0336
 - Caveats: nearest-point distance barely sees motion along the surface; the fastest recording moves only 1.6 mm (median)
   between exposures. Revisit after the calibration gap shrinks, or for faster motion.
 
+## N6 fused hand cloud per frame (2026-11-07, `fuse.py`) — passed (just)
+
+| session | frames | points / frame | same-surface point-to-plane gap | nearest-point gap | overlap |
+|---|---|---|---|---|---|
+| 035809 spread, still (every 3rd) | 268 | 45 701 | **2.93 mm** | 4.66 mm | 89 % |
+| 035942 fast motion | 1607 | 32 397 | **2.27 mm** | 4.05 mm | 95 % |
+
+- Single-frame noise floor (a camera against its next frame): 0.48–1.00 mm, so the ~4 mm nearest-point gap is not noise.
+- At 90° the cameras mostly see different sides of the hand; only 14–16 % of near cam_B/cam_A point pairs are the same
+  surface (normals within 30°). Nearest-point distance pairs points across a finger's thickness, so the exit uses
+  point-to-plane distance on same-surface pairs.
+- A per-session ICP refinement (fit on half the frames, checked on the other half) did not help: still hand 9.4 mm /
+  0.9° for 4.70 → 4.36 mm, fast motion 3.5 mm / 1.9° for 4.03 → 4.12 mm. Not used; the rig error is not a rigid offset.
+- Playback (fused/playback.mp4, front = cam_A view and side views) shows one hand, no doubling, in the fast-motion
+  session; cam_A sees this hand nearly edge-on and its points form depth layers.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
