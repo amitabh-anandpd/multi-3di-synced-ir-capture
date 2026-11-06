@@ -347,6 +347,25 @@ depth in the joint box -> bright pixels within 40 mm of a bone -> arm cut 10 mm 
   the small pointing / open hand in cam_B (3–5k px, so edge pixels weigh a lot).
 - 110–210 ms per frame per camera, mostly the full-image rectification (only the hand box is matched).
 
+## N5 motion between the cameras' exposures (2026-11-07, `tools/motion_gap.py`) — passed, no correction needed
+
+Single-frame hand clouds (segment.py) of both cameras merged with rig.json (033648), every 9th group of six N2 sessions
+(705 groups). Hand motion between the exposures = 95th-percentile joint speed (LeapC) × |cam_B − cam_A gap|.
+
+| session | pose | speed mm/s | gap ms | motion mm | hand cloud gap mm | overlap |
+|---|---|---|---|---|---|---|
+| 035726 | fist | 16 | 3.25 | 0.05 | 4.14 | 89 % |
+| 035752 | pinch | 7 | 3.41 | 0.02 | 4.16 | 85 % |
+| 035809 | spread | 10 | 3.47 | 0.03 | 4.62 | 90 % |
+| 035830 | point | 13 | 3.41 | 0.03 | 4.14 | 88 % |
+| 035901 | slow motion | 30 | 3.93 | 0.11 | 3.77 | 97 % |
+| 035942 | fast motion | 377 | 4.26 | 1.57 | 4.01 | 95 % |
+
+- By motion: < 0.25 mm 4.12 mm (507 groups), 1–2 mm 3.98 (75), 2–4 mm 4.01 (44), > 4 mm 4.26 (6). Still 4.12 vs moving
+  3.95 mm; correlation with motion −0.09. The ~4 mm calibration gap hides motion up to ~4 mm, so no time correction now.
+- Caveats: nearest-point distance barely sees motion along the surface; the fastest recording moves only 1.6 mm (median)
+  between exposures. Revisit after the calibration gap shrinks, or for faster motion.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

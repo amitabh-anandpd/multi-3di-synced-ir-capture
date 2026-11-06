@@ -91,6 +91,18 @@ class Segmenter:
             return P[:25], P[25], P[26]
         return None
 
+    def points(self, frame_id):
+        """Hand points (n, 3) mm in this unit's frame for one frame (mask + its depth)."""
+        self.last_z = None
+        m, _ = self.mask(frame_id)
+        if self.last_z is None:
+            return np.zeros((0, 3))
+        z = self.last_z
+        ok = m & np.isfinite(z)
+        v, u = np.nonzero(ok)
+        z = z[ok]
+        return np.stack([(u - self.unit.cx) / self.unit.f * z, (v - self.unit.cy) / self.unit.f * z, z], 1)
+
     def project(self, P):
         u = self.unit
         return np.stack([u.f * P[:, 0] / P[:, 2] + u.cx, u.f * P[:, 1] / P[:, 2] + u.cy], 1)
@@ -116,6 +128,7 @@ class Segmenter:
         box[y0:y1, x0:x1] = True
         bright = (L >= self.min_gray) & box
         z = self.depth.depth(disp)
+        self.last_z = z  # depth map (mm, NaN where none) of the last frame, for points()
         has = np.isfinite(z) & bright
         v, u = np.nonzero(has)
         zz = z[has]
