@@ -329,6 +329,24 @@ a hand held in the air drifts over 10 s (against one mid-session median the erro
 - cam_A gets depth on fewer hand pixels (56–74 %) than cam_B (92–99 %); the hand is closer to cam_A (≈180–200 mm).
 - This measures single-frame noise, not accuracy (accuracy is the rig / unit calibration, N0–N1).
 
+## N4 hand segmentation (2026-11-07, `segment.py`, labels from `tools/label_hands.py`) — strict IoU 0.86, not 0.9
+
+42 hand-painted frames (21 per camera, 3 per N2 session) in `labels/`. The labeller starts from "IR-bright near the
+hand", not from segment.py's mask. Mask: LeapC joints (other camera's via rig.json when this one has no hand) ->
+depth in the joint box -> bright pixels within 40 mm of a bone -> arm cut 10 mm past the wrist -> holes filled.
+
+| | IoU median (min) | frames ≥ 0.9 | ignoring 2 px along the painted edge: median (min) | ≥ 0.9 |
+|---|---|---|---|---|
+| cam_A, all 21 | 0.848 (0.479) | 24 % | 0.906 (0.489) | 57 % |
+| cam_A, without the 3 side-on open-hand frames | 0.862 (0.763) | 28 % | 0.913 (0.800) | 67 % |
+| cam_B, 21 | 0.867 (0.667) | 10 % | 0.913 (0.732) | 62 % |
+
+- 60–66 % of the disagreement lies within 3 px of the painted edge, on both sides; growing the mask by 1–4 px lowers
+  IoU. Bone radius 30/40/50 mm and brightness 25/35/45 change the median by < 0.03 (40 mm, 45 chosen).
+- Worst frames: cam_A seeing the open hand side-on (035647), where the wrist position is unclear in the image, and
+  the small pointing / open hand in cam_B (3–5k px, so edge pixels weigh a lot).
+- 110–210 ms per frame per camera, mostly the full-image rectification (only the hand box is matched).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
