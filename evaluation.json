@@ -1,0 +1,270 @@
+{
+  "sessions": {
+    "035647": {
+      "pose": "open still",
+      "frames": 135,
+      "point_to_mesh_mm": 2.7023749633234253,
+      "point_to_mesh_p90_mm": 3.2781103917145935,
+      "speed_mm_s": 47.65711975097656,
+      "jitter_mm_per_frame2": 0.24710363149642944,
+      "vs_leapc_mm": 21.77798869727707,
+      "vs_leapc_centred_mm": 16.02308453748731,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 28.822882888385173,
+        "knuckle (MCP; thumb CMC)": 20.16079024616853,
+        "middle joint (PIP; thumb MCP)": 21.73437264186283,
+        "end joint (DIP; thumb IP)": 22.832727877476895,
+        "tip": 20.429898125599564
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 15.25056132181143,
+        "knuckle (MCP; thumb CMC)": 14.249853168057475,
+        "middle joint (PIP; thumb MCP)": 15.536044208012509,
+        "end joint (DIP; thumb IP)": 18.32758966155771,
+        "tip": 17.85230429516549
+      }
+    },
+    "035726": {
+      "pose": "fist still",
+      "frames": 135,
+      "point_to_mesh_mm": 2.5050740464513734,
+      "point_to_mesh_p90_mm": 2.793973482963154,
+      "speed_mm_s": 37.53551483154297,
+      "jitter_mm_per_frame2": 0.23995788395404816,
+      "vs_leapc_mm": 19.503301117023334,
+      "vs_leapc_centred_mm": 9.256930365490435,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 17.503168305327293,
+        "knuckle (MCP; thumb CMC)": 15.233344445997002,
+        "middle joint (PIP; thumb MCP)": 18.226057432206854,
+        "end joint (DIP; thumb IP)": 23.83909617301545,
+        "tip": 33.961871175073995
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 6.764136984061519,
+        "knuckle (MCP; thumb CMC)": 5.929522637278448,
+        "middle joint (PIP; thumb MCP)": 11.541225447463624,
+        "end joint (DIP; thumb IP)": 9.154984083640956,
+        "tip": 11.880694166216067
+      }
+    },
+    "035752": {
+      "pose": "pinch still",
+      "frames": 130,
+      "point_to_mesh_mm": 2.4778068112499962,
+      "point_to_mesh_p90_mm": 2.555511828505238,
+      "speed_mm_s": 30.890971183776855,
+      "jitter_mm_per_frame2": 0.1711784303188324,
+      "vs_leapc_mm": 14.768814740626782,
+      "vs_leapc_centred_mm": 1.9769216174611375,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 14.072567616682718,
+        "knuckle (MCP; thumb CMC)": 14.042233663822888,
+        "middle joint (PIP; thumb MCP)": 11.518197873416995,
+        "end joint (DIP; thumb IP)": 15.96666330162941,
+        "tip": 17.441469646585738
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 1.0325215057211534,
+        "knuckle (MCP; thumb CMC)": 1.713046152536132,
+        "middle joint (PIP; thumb MCP)": 2.4775093713488214,
+        "end joint (DIP; thumb IP)": 2.2461369978692702,
+        "tip": 2.8576852907575727
+      }
+    },
+    "035809": {
+      "pose": "spread still",
+      "frames": 134,
+      "point_to_mesh_mm": 2.4117149108341476,
+      "point_to_mesh_p90_mm": 2.502356104544129,
+      "speed_mm_s": 15.882254600524902,
+      "jitter_mm_per_frame2": 0.09256468713283539,
+      "vs_leapc_mm": 9.685194349378062,
+      "vs_leapc_centred_mm": 1.6846115545864324,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 11.001507196254341,
+        "knuckle (MCP; thumb CMC)": 3.9345232640908865,
+        "middle joint (PIP; thumb MCP)": 7.870921650432653,
+        "end joint (DIP; thumb IP)": 9.902905726400839,
+        "tip": 14.10993674917577
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 2.0935857768785615,
+        "knuckle (MCP; thumb CMC)": 1.3701433433660055,
+        "middle joint (PIP; thumb MCP)": 1.5447908901186662,
+        "end joint (DIP; thumb IP)": 1.888935668458754,
+        "tip": 2.40395711469397
+      }
+    },
+    "035830": {
+      "pose": "point still",
+      "frames": 121,
+      "point_to_mesh_mm": 2.370784305086595,
+      "point_to_mesh_p90_mm": 2.4810538440473824,
+      "speed_mm_s": 31.619098663330078,
+      "jitter_mm_per_frame2": 0.21019265055656433,
+      "vs_leapc_mm": 17.90189711173859,
+      "vs_leapc_centred_mm": 3.0963467553677337,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 5.831675508846692,
+        "knuckle (MCP; thumb CMC)": 12.241085358268867,
+        "middle joint (PIP; thumb MCP)": 15.787720851635338,
+        "end joint (DIP; thumb IP)": 18.217709916457267,
+        "tip": 34.01843409732292
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 2.589947604400509,
+        "knuckle (MCP; thumb CMC)": 3.033361509649834,
+        "middle joint (PIP; thumb MCP)": 3.000896422010097,
+        "end joint (DIP; thumb IP)": 3.277208110148416,
+        "tip": 4.004770564903349
+      }
+    },
+    "035901": {
+      "pose": "slow motion",
+      "frames": 281,
+      "point_to_mesh_mm": 2.7202820589625847,
+      "point_to_mesh_p90_mm": 2.9360921519632037,
+      "speed_mm_s": 56.22511291503906,
+      "jitter_mm_per_frame2": 0.6382704973220825,
+      "vs_leapc_mm": 12.592099309089894,
+      "vs_leapc_centred_mm": 7.285088104767424,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 21.58623036823505,
+        "knuckle (MCP; thumb CMC)": 8.178525119274973,
+        "middle joint (PIP; thumb MCP)": 15.008708760508744,
+        "end joint (DIP; thumb IP)": 14.822822278001228,
+        "tip": 12.545562372093093
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 4.499091984613837,
+        "knuckle (MCP; thumb CMC)": 4.733385174240155,
+        "middle joint (PIP; thumb MCP)": 8.552175696902268,
+        "end joint (DIP; thumb IP)": 11.269161894070505,
+        "tip": 10.41343555102385
+      }
+    },
+    "035942": {
+      "pose": "fast motion",
+      "frames": 402,
+      "point_to_mesh_mm": 3.142786243194948,
+      "point_to_mesh_p90_mm": 3.6815731726756176,
+      "speed_mm_s": 398.5709533691406,
+      "jitter_mm_per_frame2": 1.6927261352539062,
+      "vs_leapc_mm": 14.115665218063402,
+      "vs_leapc_centred_mm": 11.285888684889944,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 25.877638534911164,
+        "knuckle (MCP; thumb CMC)": 13.06663149559662,
+        "middle joint (PIP; thumb MCP)": 15.169948078907943,
+        "end joint (DIP; thumb IP)": 14.547321696805884,
+        "tip": 13.254454750696269
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 14.776958818722356,
+        "knuckle (MCP; thumb CMC)": 10.956951661435479,
+        "middle joint (PIP; thumb MCP)": 11.089316424234067,
+        "end joint (DIP; thumb IP)": 10.832096770746809,
+        "tip": 11.67773809449968
+      }
+    }
+  },
+  "speed_bands": {
+    "0-50": {
+      "frames": 641,
+      "point_to_mesh_mm": 2.467196951571229,
+      "point_to_mesh_p90_mm": 2.7860358858276815,
+      "vs_leapc_centred_mm": 4.057020854413273
+    },
+    "50-150": {
+      "frames": 328,
+      "point_to_mesh_mm": 2.7460781439428437,
+      "point_to_mesh_p90_mm": 3.237307467963007,
+      "vs_leapc_centred_mm": 8.815042553246052
+    },
+    "150-400": {
+      "frames": 170,
+      "point_to_mesh_mm": 3.15661784241118,
+      "point_to_mesh_p90_mm": 3.7064440540867385,
+      "vs_leapc_centred_mm": 11.912765629208781
+    },
+    "400+": {
+      "frames": 199,
+      "point_to_mesh_mm": 3.1230168749733376,
+      "point_to_mesh_p90_mm": 3.6116966503361283,
+      "vs_leapc_centred_mm": 9.968539916134553
+    }
+  },
+  "vs_leapc_by_joint_mm": {
+    "wrist": 20.14675651822116,
+    "knuckle (MCP; thumb CMC)": 12.339411193729003,
+    "middle joint (PIP; thumb MCP)": 14.915092032872945,
+    "end joint (DIP; thumb IP)": 15.835918266560753,
+    "tip": 15.893060713080622
+  },
+  "vs_leapc_centred_by_joint_mm": {
+    "wrist": 5.772173896002695,
+    "knuckle (MCP; thumb CMC)": 5.906375573972996,
+    "middle joint (PIP; thumb MCP)": 8.175641392694434,
+    "end joint (DIP; thumb IP)": 8.88138509134972,
+    "tip": 8.924870499121415
+  },
+  "worst": [
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 39344,
+      "p2m": 4.926869569430022,
+      "speed": 319.5906066894531
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 39327,
+      "p2m": 4.848765359892981,
+      "speed": 113.62664031982422
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 39340,
+      "p2m": 4.81104261488121,
+      "speed": 799.201416015625
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 39348,
+      "p2m": 4.344379815417074,
+      "speed": 428.18194580078125
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 38143,
+      "p2m": 4.187346520958192,
+      "speed": 359.72283935546875
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 38147,
+      "p2m": 4.175394110099008,
+      "speed": 193.37619018554688
+    },
+    {
+      "session": "035647",
+      "pose": "open still",
+      "frame": 31684,
+      "p2m": 4.123505380665127,
+      "speed": 63.57313537597656
+    },
+    {
+      "session": "035942",
+      "pose": "fast motion",
+      "frame": 38197,
+      "p2m": 4.121124959722149,
+      "speed": 132.26190185546875
+    }
+  ]
+}

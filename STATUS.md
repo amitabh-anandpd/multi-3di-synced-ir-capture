@@ -408,6 +408,50 @@ pinky 50 (0); thumb last joint → tip 37 (+2). Moving the assumed crease by a q
 ~8 mm, so ruler lengths can't check better than ~±5 mm. MANO knuckle-centre width 64 mm (not comparable to 78 outside).
 MANO MCP → tip: 82 / 83 / 79 / 61 mm; LeapC's own: 70 / 75 / 67 / 57 mm.
 
+### N7 open question: fingertip length (2026-11-07)
+
+- The fused cloud reaches past MANO's fingertips: points assigned to each MANO distal segment extend (p95 along the
+  finger) index 9, middle 4–9, ring 3–7, pinky 0–4, thumb ~11 mm. Both cameras agree (per camera within ~2 mm), and
+  the fingers are 73–83° from cam_A's view direction, so these are not view-ray streaks.
+- Fit settings are not the cause: trim 0.95, no LeapC joint pull and a weaker shape prior change MANO's lengths by
+  < 4 mm and held-out accuracy by 0.01 mm (3.05 vs 3.06).
+- Either the cloud's fingertips are inflated (stereo edge smear + IR glow around bright skin; the ruler and LeapC both
+  suggest shorter fingers than the cloud) or MANO's 10 shape parameters can't lengthen one finger on its own.
+- Phone tests (2026-11-07_042950 front: dark glass, no depth; _043714 back): inconclusive, because the edge position
+  depends on the brightness threshold (back median 70, bright shirt behind it, the phone's side visible to cam_A).
+- Clean test still to do: white paper on a dark book cover (sharp bright/dark edge, exact A4 size).
+
+## N8 evaluation (2026-11-07, `tools/evaluate.py` → `evaluation.json`)
+
+All seven N2 sessions fused (every 3rd frame; fast motion every frame) and fitted (fast motion every 2nd fused frame),
+smoothed with σ 2 (still) / σ 1 (motion); every 2nd fitted frame evaluated (1338 frames). `fit_mano.py` now takes
+cam_B's LeapC joints via rig.json when cam_A has no hand (open still).
+
+| session | pose | frames | surface mm (median / p90) | hand speed mm/s | jitter mm/frame² | vs LeapC raw / offset removed, mm |
+|---|---|---|---|---|---|---|
+| 035647 | open, still | 135 | 2.70 / **3.28** | 48 | 0.25 | 21.8 / **16.0** |
+| 035726 | fist, still | 135 | 2.51 / 2.79 | 38 | 0.24 | 19.5 / 9.3 |
+| 035752 | pinch, still | 130 | 2.48 / 2.56 | 31 | 0.17 | 14.8 / 2.0 |
+| 035809 | spread, still | 134 | 2.41 / 2.50 | 16 | 0.09 | 9.7 / 1.7 |
+| 035830 | point, still | 121 | 2.37 / 2.48 | 32 | 0.21 | 17.9 / 3.1 |
+| 035901 | slow motion | 281 | 2.72 / 2.94 | 56 | 0.64 | 12.6 / 7.3 |
+| 035942 | fast motion | 402 | 3.14 / 3.68 | 399 | 1.69 | 14.1 / 11.3 |
+
+By hand speed (95th-percentile joint speed): 0–50 mm/s 2.47 mm (641 frames), 50–150 2.75 (328), 150–400 3.16 (170),
+400+ 3.12 (199); vs LeapC (offset removed) 4.1 / 8.8 / 11.9 / 10.0 mm.
+
+MANO vs LeapC by joint type, raw / offset removed: wrist 20.1 / 5.8, knuckles 12.3 / 5.9, middle joints 14.9 / 8.2,
+end joints 15.8 / 8.9, tips 15.9 / 8.9 mm. The raw offset is mostly definition (where each model puts its joints).
+
+Where it is weakest:
+- Open hand, still: the only pose over 3 mm at p90 (3.28) and 16 mm from LeapC. cam_A sees the hand edge-on and had no
+  LeapC tracking, so the start comes from cam_B (which calls the hand "right" in 67 of 841 frames).
+- Fist: 9.3 mm from LeapC with the surface still at 2.51 mm: curled fingers are hidden, so the cloud constrains them less.
+- Fast motion: surface 3.1 mm (target 5); the worst frames (4.2–4.9 mm) bunch around frames 39327–39348 and 38143–38197.
+- MANO vs LeapC grows with speed (4 → 10–12 mm). Not a time lag: shifting LeapC's joints by ±1–10 frames only makes it
+  worse (best at 0: 11.2 mm; ±2 frames 12.3–12.9). With no ground truth for moving joints, which one is off is unknown.
+- Fingertip length: open (see N7).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

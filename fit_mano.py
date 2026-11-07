@@ -105,6 +105,15 @@ def leap_joints_camA(session):
             P = leap_to_unit(np.vstack([J, wrist]), unit, cam.baseline)
             out[fid] = P[MANO_TO_LEAP]
             sides.append(r["type"])
+    if len(out) < 0.5 * len(cam.rows):  # cam_A lost the hand: take cam_B's joints, moved over with rig.json
+        from segment import Segmenter
+        seg = Segmenter(session, "cam_A")
+        for r in cam.rows:
+            fid = int(r["frame_id"])
+            if fid not in out:
+                jt = seg.joints(fid)
+                if jt is not None:
+                    out[fid] = np.vstack([jt[0], jt[1]])[MANO_TO_LEAP]
     return out, (max(set(sides), key=sides.count) if sides else None)
 
 
@@ -118,7 +127,7 @@ def finger_lengths(j):
 
 
 def fit_frames(hand, betas, frames, leap, init=None, iters=60, w_joint=0.02, w_prior=0.5, w_smooth=0.0,
-               prev=None, lr=0.02, opt_betas=False, npts=1500, seed=0):
+               prev=None, lr=0.02, opt_betas=False, npts=1500, seed=0, trim=0.8, beta_prior=0.05):
     """Fit pose (+ optionally shared betas) to several frames at once. frames: [(fid, points)]."""
     rng = np.random.default_rng(seed)
     n = len(frames)
@@ -136,13 +145,13 @@ def fit_frames(hand, betas, frames, leap, init=None, iters=60, w_joint=0.02, w_p
         opt.zero_grad()
         v, j = hand(betas.expand(n, -1), orient, pose, transl)
         nv = vertex_normals(v, hand.faces)
-        loss = sum(data_loss(v[i], nv[i], pts[i]) for i in range(n)) / n
+        loss = sum(data_loss(v[i], nv[i], pts[i], trim) for i in range(n)) / n
         js = [((j[i] - lj[i]).norm(dim=-1)).mean() for i in range(n) if lj[i] is not None]
         if js:
             loss = loss + w_joint * sum(js) / len(js)
         loss = loss + w_prior * (pose ** 2).mean()
         if opt_betas:
-            loss = loss + 0.05 * (betas ** 2).mean()
+            loss = loss + beta_prior * (betas ** 2).mean()
         if prev is not None and w_smooth:
             loss = loss + w_smooth * ((pose - prev[1]) ** 2).mean() + w_smooth * 1e-3 * ((transl - prev[2]) ** 2).mean()
         loss.backward()
