@@ -452,6 +452,20 @@ Where it is weakest:
   worse (best at 0: 11.2 mm; ±2 frames 12.3–12.9). With no ground truth for moving joints, which one is off is unknown.
 - Fingertip length: open (see N7).
 
+## Rig recalibrated after the cameras were moved (2026-11-11, `calib_rig.py`) — current rig.json from 184155
+
+The cameras were remounted, so the old rig gave a 10 mm gap and 1 % overlap on a hand (180927). `stereo.find` now
+falls back to `cv2.findChessboardCornersSB` when `findChessboardCorners` fails: on board 183206, cam_B found the
+board in 56 of 76 sampled frames instead of 11, and both cameras together in 23 instead of 3.
+
+| board | still views | rotation / distance | corner residual median / p95 | hand check, same-surface gap |
+|---|---|---|---|---|
+| 183206 | 72 | 94.7° / 346 mm | 2.69 / 6.45 mm (box check 181644: 5.07 mm) | 183309: 2.48 mm, 100 % overlap |
+| 184155 (camera moved again; **current**) | 28 | 96.7° / 380 mm | 3.12 / 9.72 mm | 184301: 2.46 mm, 98 % overlap |
+
+Both pass N6's 3 mm on a hand; the corner residuals stay above N1's 2 mm, as with the old rig. cam_B has an object
+close to its lens (blurred blob at the top and bottom of its view); cam_A is further than 25–30 cm from the scene.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

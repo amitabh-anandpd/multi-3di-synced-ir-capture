@@ -8,15 +8,20 @@ PLAN.md has the plan and exit criteria. STATUS.md has every measured result; rea
 
 | Folder / file | What it is | If you can't get it |
 |---|---|---|
-| `sessions/` | All recordings (~3 GB per minute). Needed: boards `2026-11-06_011406`, `2026-11-06_033648`; hands `2026-11-06_035647` … `035942` (7 sessions) | Record new ones (below) |
+| `sessions/` | All recordings (~3 GB per minute). Needed: boards `2026-11-06_011406`, `2026-11-11_184155`; hands `2026-11-06_035647` … `035942` (7 sessions, old rig `2026-11-06_033648`), `2026-11-11_184301` (current rig) | Record new ones (below) |
 | `units/*_dense_800_1.5_256.npz` | Dense rectification maps for the two cameras | `python tools/dense_map.py` with both cameras plugged in |
 | `mano/` | MANO model. **Licence: register at mano.is.tue.mpg.de yourself; never commit or share these files** | Download `MANO_LEFT.pkl` / `MANO_RIGHT.pkl` into `mano/`, then `python tools/convert_mano.py` |
 | `labels/` | 42 hand-painted masks for the N4 check (192 KB) | `python tools/label_hands.py` |
 
 `units/*.json` (per-camera calibration), `rig.json` (cam_B pose relative to cam_A), `mano_shape.json` (hand shape,
 left hand of one person) and `evaluation.json` are in git. These files belong to these two physical cameras
-(cam_A = serial …6195, cam_B = …6230, see `config.json`) and this rig placement. If the cameras are moved, redo the
-rig calibration.
+(cam_A = serial …6195, cam_B = …6230, see `config.json`) and this rig placement. `rig.json` is from board `sessions/2026-11-11_184155` (recalibrated after the cameras were moved;
+hand check 2.46 mm). **If either camera moves even slightly, redo the rig calibration**: record a 40 s board session
+(25 mm squares, hold each pose still ~1 s, board facing between the cameras), `pair_frames.py` it, then
+`python calib_rig.py <that session>`, and check by fusing a short hand recording (`fuse.py`, gap should be <= 3 mm).
+`fuse.py` (and `segment.py`) always read `./rig.json`. To re-fuse the 2026-11-06 hand sessions, first copy the rig
+they were recorded with back: `sessions/2026-11-06_033648/rig.json` (and restore `sessions/2026-11-11_184155/rig.json`
+afterwards).
 
 ## Setup
 

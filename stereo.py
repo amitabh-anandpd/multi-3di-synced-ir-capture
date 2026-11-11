@@ -85,7 +85,10 @@ def find(img):
     # no CALIB_CB_FAST_CHECK: it rejects these dim IR boards
     ok, pts = cv2.findChessboardCorners(img, GRID, flags=cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE)
     if not ok:
-        return None
+        # the sector-based detector finds boards seen at a steep angle or partly blurred (2026-11-11: cam_B 56 of 76
+        # frames vs 11); its corners are already subpixel-accurate
+        ok, pts = cv2.findChessboardCornersSB(img, GRID, flags=cv2.CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_EXHAUSTIVE)
+        return pts.reshape(-1, 2) if ok else None
     pts = cv2.cornerSubPix(img, pts, (5, 5), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01))
     return pts.reshape(-1, 2)
 
