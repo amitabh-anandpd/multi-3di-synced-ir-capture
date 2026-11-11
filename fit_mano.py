@@ -174,6 +174,22 @@ def init_from_leap(hand, betas, lj, iters=300):
     return orient.detach(), pose.detach(), transl.detach()
 
 
+def unwrap_rotvec(x):
+    """(n, 3k) axis-angle vectors over time -> the same rotations, written continuously.
+
+    A rotation of angle a about axis u is also a - 2*pi about u; fits that start every frame afresh (fit_batch.py) can
+    switch between the two from one frame to the next, and smoothing would then average them into a wrong rotation."""
+    x = np.array(x, dtype=np.float64)
+    v = x.reshape(len(x), -1, 3)
+    for t in range(1, len(v)):
+        a = np.linalg.norm(v[t], axis=1, keepdims=True)
+        u = v[t] / np.maximum(a, 1e-9)
+        cands = np.stack([(a + 2 * np.pi * k) * u for k in (-2, -1, 0, 1, 2)])  # (5, k, 3)
+        best = np.argmin(np.linalg.norm(cands - v[t - 1], axis=-1), axis=0)
+        v[t] = cands[best, np.arange(v.shape[1])]
+    return v.reshape(x.shape)
+
+
 def gaussian_smooth(x, sigma):
     """Smooth (n, k) over axis 0 with a Gaussian of sigma samples, edges reflected."""
     if sigma <= 0:
@@ -254,7 +270,8 @@ if __name__ == "__main__":
         z = np.load(os.path.join(out, "params.npz"))
         fused = dict(load_fused(args.session))
         fr = z["frames"]
-        sm = {k: gaussian_smooth(z[k], args.post) for k in ("orient", "pose", "transl")}
+        sm = {k: gaussian_smooth(unwrap_rotvec(z[k]) if k != "transl" else z[k], args.post)
+              for k in ("orient", "pose", "transl")}
         T = lambda a: torch.as_tensor(a, dtype=torch.float32)  # noqa: E731
         with torch.no_grad():
             V, J = hand(betas.expand(len(fr), -1), T(sm["orient"]), T(sm["pose"]), T(sm["transl"]))

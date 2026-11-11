@@ -15,8 +15,8 @@ PLAN.md has the plan and exit criteria. STATUS.md has every measured result; rea
 
 `units/*.json` (per-camera calibration), `rig.json` (cam_B pose relative to cam_A), `mano_shape.json` (hand shape,
 left hand of one person) and `evaluation.json` are in git. These files belong to these two physical cameras
-(cam_A = serial …6195, cam_B = …6230, see `config.json`) and this rig placement. `rig.json` is from board `sessions/2026-11-11_184155` (recalibrated after the cameras were moved;
-hand check 2.46 mm). **If either camera moves even slightly, redo the rig calibration**: record a 40 s board session
+(cam_A = serial …6195, cam_B = …6230, see `config.json`) and this rig placement. `rig.json` is from board `sessions/2026-11-11_230458` (cameras moved closer; N9 hand sessions
+2026-11-11_232548 … 232944 fuse at 1.7–2.7 mm). **If either camera moves even slightly, redo the rig calibration**: record a 40 s board session
 (25 mm squares, hold each pose still ~1 s, board facing between the cameras), `pair_frames.py` it, then
 `python calib_rig.py <that session>`, and check by fusing a short hand recording (`fuse.py`, gap should be <= 3 mm).
 `fuse.py` (and `segment.py`) always read `./rig.json`. To re-fuse the 2026-11-06 hand sessions, first copy the rig
@@ -45,7 +45,9 @@ python calib_rig.py sessions/2026-11-06_033648 --check sessions/2026-11-06_03385
 
 python fuse.py sessions/2026-11-06_035942                               # -> <session>/fused/ (hands.npz, PLYs, playback.mp4)
 python fit_mano.py --shape sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809
-python fit_mano.py sessions/2026-11-06_035942 --every 2                 # -> <session>/mano/params.npz
+python fit_mano.py sessions/2026-11-06_035942 --every 2                 # -> <session>/mano/params.npz (CPU, ~1 s/frame)
+python fit_batch.py --pack sessions/2026-11-11_232548                   # faster: pack -> fit on Kaggle GPU (fit_kaggle.ipynb)
+python fit_batch.py --unpack fit_inputs                                 #   -> <session>/mano/params.npz from Kaggle's params.zip
 python fit_mano.py sessions/2026-11-06_035942 --post 1                  # smoothing -> smoothed.npz, overlay.mp4 (sigma 2 for still poses)
 python tools/evaluate.py sessions/2026-11-06_035647 sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809 sessions/2026-11-06_035830 sessions/2026-11-06_035901 sessions/2026-11-06_035942
 ```

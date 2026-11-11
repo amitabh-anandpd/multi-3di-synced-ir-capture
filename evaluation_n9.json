@@ -1,0 +1,246 @@
+{
+  "sessions": {
+    "232548": {
+      "pose": "N9 open close slow",
+      "frames": 240,
+      "point_to_mesh_mm": 2.3932249508773027,
+      "point_to_mesh_p90_mm": 2.5792290062143635,
+      "speed_mm_s": 49.07908821105957,
+      "jitter_mm_per_frame2": 0.8427254557609558,
+      "vs_leapc_mm": 16.416590771944257,
+      "vs_leapc_centred_mm": 7.6365601104437735,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 10.122413074740383,
+        "knuckle (MCP; thumb CMC)": 15.722867114513631,
+        "middle joint (PIP; thumb MCP)": 16.022083412208975,
+        "end joint (DIP; thumb IP)": 19.08631712992367,
+        "tip": 19.79745265514741
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 5.388447558541205,
+        "knuckle (MCP; thumb CMC)": 5.783889925495711,
+        "middle joint (PIP; thumb MCP)": 7.252686877657002,
+        "end joint (DIP; thumb IP)": 8.611474794248931,
+        "tip": 13.052309509100994
+      }
+    },
+    "232631": {
+      "pose": "N9 finger counting",
+      "frames": 254,
+      "point_to_mesh_mm": 2.4709545503958283,
+      "point_to_mesh_p90_mm": 2.912587975147673,
+      "speed_mm_s": 77.12710189819336,
+      "jitter_mm_per_frame2": 1.1332635879516602,
+      "vs_leapc_mm": 16.123567897263257,
+      "vs_leapc_centred_mm": 9.610158166663979,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 8.70730802419629,
+        "knuckle (MCP; thumb CMC)": 17.69251929399098,
+        "middle joint (PIP; thumb MCP)": 14.05549948996002,
+        "end joint (DIP; thumb IP)": 14.91620596752392,
+        "tip": 22.36962926645404
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 5.367549341489479,
+        "knuckle (MCP; thumb CMC)": 5.236931263332265,
+        "middle joint (PIP; thumb MCP)": 9.737288332860437,
+        "end joint (DIP; thumb IP)": 10.971466009662395,
+        "tip": 19.124563551283345
+      }
+    },
+    "232713": {
+      "pose": "N9 pinches each finger",
+      "frames": 285,
+      "point_to_mesh_mm": 2.3780324695007877,
+      "point_to_mesh_p90_mm": 2.6697343584648676,
+      "speed_mm_s": 112.27132415771484,
+      "jitter_mm_per_frame2": 1.2747721672058105,
+      "vs_leapc_mm": 16.680960199344305,
+      "vs_leapc_centred_mm": 8.963096337908931,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 11.447364904847186,
+        "knuckle (MCP; thumb CMC)": 17.199559359715398,
+        "middle joint (PIP; thumb MCP)": 13.485997594276188,
+        "end joint (DIP; thumb IP)": 17.05420633459531,
+        "tip": 23.617235856487174
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 4.905347059894373,
+        "knuckle (MCP; thumb CMC)": 6.388513185677351,
+        "middle joint (PIP; thumb MCP)": 8.953569758912309,
+        "end joint (DIP; thumb IP)": 11.139931792312913,
+        "tip": 17.832336594399862
+      }
+    },
+    "232756": {
+      "pose": "N9 wrist rotation",
+      "frames": 262,
+      "point_to_mesh_mm": 2.6016743251692716,
+      "point_to_mesh_p90_mm": 3.445159331913653,
+      "speed_mm_s": 125.64166259765625,
+      "jitter_mm_per_frame2": 1.6744657754898071,
+      "vs_leapc_mm": 16.352022043164528,
+      "vs_leapc_centred_mm": 12.575120585867907,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 10.844091100109704,
+        "knuckle (MCP; thumb CMC)": 15.523532322271528,
+        "middle joint (PIP; thumb MCP)": 15.53826872616019,
+        "end joint (DIP; thumb IP)": 16.966317229700977,
+        "tip": 21.651324668972435
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 7.7348246495145165,
+        "knuckle (MCP; thumb CMC)": 9.495511290883572,
+        "middle joint (PIP; thumb MCP)": 11.506875397176936,
+        "end joint (DIP; thumb IP)": 13.307680969406825,
+        "tip": 15.957179330436329
+      }
+    },
+    "232838": {
+      "pose": "N9 free slow",
+      "frames": 339,
+      "point_to_mesh_mm": 2.4306529073236938,
+      "point_to_mesh_p90_mm": 2.800746767121306,
+      "speed_mm_s": 193.66294860839844,
+      "jitter_mm_per_frame2": 1.2616093158721924,
+      "vs_leapc_mm": 16.65672113909668,
+      "vs_leapc_centred_mm": 11.415341256638868,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 10.103178162839134,
+        "knuckle (MCP; thumb CMC)": 14.937085793510727,
+        "middle joint (PIP; thumb MCP)": 15.763398023400892,
+        "end joint (DIP; thumb IP)": 18.292460259903343,
+        "tip": 20.439092833836426
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 6.736719957020492,
+        "knuckle (MCP; thumb CMC)": 7.553479017116296,
+        "middle joint (PIP; thumb MCP)": 11.416191829484484,
+        "end joint (DIP; thumb IP)": 12.94744359279087,
+        "tip": 17.842963724291575
+      }
+    },
+    "232944": {
+      "pose": "N9 free fast",
+      "frames": 412,
+      "point_to_mesh_mm": 2.4739124934890717,
+      "point_to_mesh_p90_mm": 3.0243588413660407,
+      "speed_mm_s": 315.00128173828125,
+      "jitter_mm_per_frame2": 1.857338309288025,
+      "vs_leapc_mm": 15.774886761261904,
+      "vs_leapc_centred_mm": 13.436115795650046,
+      "vs_leapc_by_joint_mm": {
+        "wrist": 9.22510733769462,
+        "knuckle (MCP; thumb CMC)": 13.725352367476216,
+        "middle joint (PIP; thumb MCP)": 15.638778435698015,
+        "end joint (DIP; thumb IP)": 17.832513259399818,
+        "tip": 21.11444360746183
+      },
+      "vs_leapc_centred_by_joint_mm": {
+        "wrist": 6.502286452507794,
+        "knuckle (MCP; thumb CMC)": 8.49096637918278,
+        "middle joint (PIP; thumb MCP)": 12.535641887310462,
+        "end joint (DIP; thumb IP)": 16.359117871147493,
+        "tip": 20.477770954443585
+      }
+    }
+  },
+  "speed_bands": {
+    "0-50": {
+      "frames": 278,
+      "point_to_mesh_mm": 2.3504236478437326,
+      "point_to_mesh_p90_mm": 2.62502930060522,
+      "vs_leapc_centred_mm": 8.780480683170879
+    },
+    "50-150": {
+      "frames": 720,
+      "point_to_mesh_mm": 2.395407647094922,
+      "point_to_mesh_p90_mm": 2.7980054165712285,
+      "vs_leapc_centred_mm": 9.901053279840944
+    },
+    "150-400": {
+      "frames": 584,
+      "point_to_mesh_mm": 2.4970214993622823,
+      "point_to_mesh_p90_mm": 2.949635418243368,
+      "vs_leapc_centred_mm": 11.974010589919338
+    },
+    "400+": {
+      "frames": 210,
+      "point_to_mesh_mm": 2.6976913657881125,
+      "point_to_mesh_p90_mm": 4.393327868647745,
+      "vs_leapc_centred_mm": 13.642825306658299
+    }
+  },
+  "vs_leapc_by_joint_mm": {
+    "wrist": 9.82130482232493,
+    "knuckle (MCP; thumb CMC)": 15.604446542043522,
+    "middle joint (PIP; thumb MCP)": 15.15036162554993,
+    "end joint (DIP; thumb IP)": 17.374269651038382,
+    "tip": 21.609580028328075
+  },
+  "vs_leapc_centred_by_joint_mm": {
+    "wrist": 5.829962637245535,
+    "knuckle (MCP; thumb CMC)": 7.2982487943055885,
+    "middle joint (PIP; thumb MCP)": 10.496117376894338,
+    "end joint (DIP; thumb IP)": 12.557857468120696,
+    "tip": 17.882278704615132
+  },
+  "worst": [
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 72218,
+      "p2m": 17.787105366008305,
+      "speed": 1226.1163330078125
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 71297,
+      "p2m": 17.157279575976204,
+      "speed": 989.3633422851562
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 71515,
+      "p2m": 15.015481979498773,
+      "speed": 1084.9517822265625
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 70995,
+      "p2m": 13.660046534480454,
+      "speed": 1361.5673828125
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 70704,
+      "p2m": 10.380628719651366,
+      "speed": 670.8784790039062
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 71167,
+      "p2m": 10.223439583297548,
+      "speed": 842.7786865234375
+    },
+    {
+      "session": "232756",
+      "pose": "N9 wrist rotation",
+      "frame": 71854,
+      "p2m": 9.889776292895645,
+      "speed": 1012.182373046875
+    },
+    {
+      "session": "232944",
+      "pose": "N9 free fast",
+      "frame": 75047,
+      "p2m": 9.247182938655502,
+      "speed": 1051.7037353515625
+    }
+  ]
+}

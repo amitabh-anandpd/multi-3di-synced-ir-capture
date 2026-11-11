@@ -466,6 +466,35 @@ board in 56 of 76 sampled frames instead of 11, and both cameras together in 23 
 Both pass N6's 3 mm on a hand; the corner residuals stay above N1's 2 mm, as with the old rig. cam_B has an object
 close to its lens (blurred blob at the top and bottom of its view); cam_A is further than 25–30 cm from the scene.
 
+## N9 hand sessions at the closer rig, fitted on Kaggle (2026-11-11/12, `fit_batch.py`, `fit_kaggle.ipynb`)
+
+Cameras moved closer (rig from board 230458: 92.2°, 254 mm apart, corner residual 2.74 mm). Six 30 s left-hand
+sessions, fused every 3rd frame (free fast every 2nd): same-surface gap 1.72–2.67 mm, ~38k points per frame (3× the
+N2 sessions). FPS was 52–60 in five of them (Control Panel probably open).
+
+MANO fitted with `fit_batch.py` on a Kaggle T4: all frames of a session at once, every frame starting from LeapC,
+neighbours tied by a smoothness term, plus propagation passes (each frame tries the result 1, 2, 4 … 16 frames away).
+Check against fit_mano.py on 2026-11-06_035901 frames 300–380: 2.71 vs 2.79 mm, 5.5 vs 9.6 mm from LeapC (offset
+removed); without propagation 2.93 mm (a stretch stuck near LeapC's start). On the laptop CPU it is ~7 s per frame.
+
+Bug found and fixed: fits that start each frame afresh can switch between the two axis-angle forms of the same
+orientation (e.g. 132° about u and 228° about −u); smoothing then averaged them into a hand turned ~180° (worst
+frames 50–63 mm). `fit_mano.unwrap_rotvec` now makes orient / pose continuous before `--post` smoothing (rotations
+unchanged, 0.0000°). Worst frames after the fix: 10–18 mm, all fast moments in wrist rotation.
+
+| session | pose | frames | surface mm (median / p90) | speed mm/s | jitter | vs LeapC raw / offset removed |
+|---|---|---|---|---|---|---|
+| 232548 | open close slow | 240 | 2.39 / 2.58 | 49 | 0.84 | 16.4 / 7.6 |
+| 232631 | finger counting | 254 | 2.47 / 2.91 | 77 | 1.13 | 16.1 / 9.6 |
+| 232713 | pinches each finger | 285 | 2.38 / 2.67 | 112 | 1.27 | 16.7 / 9.0 |
+| 232756 | wrist rotation | 262 | 2.60 / 3.45 | 126 | 1.67 | 16.4 / 12.6 |
+| 232838 | free slow | 339 | 2.43 / 2.80 | 194 | 1.26 | 16.7 / 11.4 |
+| 232944 | free fast | 412 | 2.47 / 3.02 | 315 | 1.86 | 15.8 / 13.4 |
+
+By speed: 0–50 mm/s 2.35 mm, 50–150 2.40, 150–400 2.50, 400+ 2.70 (p90 4.39). Before smoothing every session is
+2.27–2.43 mm. MANO vs LeapC (offset removed) is 9–13 mm, higher than N8's still poses (2–3 mm) and like N8's motion
+(7–11 mm); tips 17.9 mm. Numbers in `evaluation_n9.json` (`evaluation.json` stays N8).
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed
