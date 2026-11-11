@@ -5,3 +5,4 @@ __pycache__/
 units/*.npz
 labels/
 mano/
+fit_inputs/
