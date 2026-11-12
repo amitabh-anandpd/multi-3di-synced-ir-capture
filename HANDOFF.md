@@ -52,6 +52,12 @@ python fit_mano.py sessions/2026-11-06_035942 --post 1                  # smooth
 python tools/evaluate.py sessions/2026-11-06_035647 sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809 sessions/2026-11-06_035830 sessions/2026-11-06_035901 sessions/2026-11-06_035942
 ```
 
+Training data for `train_kaggle.ipynb` (two_cam mode): `python tools/pack_drive.py sessions/<fitted sessions>` writes
+one zip per session to `drive_upload/` (only the frame pairs with a MANO label, ~70–250 MB each, plus the rig.json it
+was fused with); drag the zips into the shared Drive's `sessions/` folder. The notebook unpacks `sessions/*.zip`.
+Labels: `mano/smoothed.npz` joints (21, mm, cam_A frame). Known ambiguity: a flat hand seen edge-on can fit with palm
+and back swapped (joints nearly unchanged); `--post` smooths each stretch between such switches separately.
+
 Checks for individual stages: `python depth.py <sessions>` (N3), `python segment.py --eval` (N4),
 `python tools/motion_gap.py <sessions>` (N5). Board corner detection takes 6–11 min the first time per board
 session, then it is cached in the session folder. The MANO fit runs at about 1 s per frame on the CPU.

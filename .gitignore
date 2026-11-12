@@ -6,3 +6,4 @@ units/*.npz
 labels/
 mano/
 fit_inputs/
+drive_upload/

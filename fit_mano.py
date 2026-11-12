@@ -270,8 +270,16 @@ if __name__ == "__main__":
         z = np.load(os.path.join(out, "params.npz"))
         fused = dict(load_fused(args.session))
         fr = z["frames"]
-        sm = {k: gaussian_smooth(unwrap_rotvec(z[k]) if k != "transl" else z[k], args.post)
-              for k in ("orient", "pose", "transl")}
+        # a flat hand seen edge-on fits almost as well with palm and back swapped (joints nearly unchanged, mesh
+        # flipped); fit_batch.py can switch between the two from one frame to the next. Averaging across such a
+        # switch gives a wrong hand, so smooth each stretch between switches (orientation step > 90 deg) on its own.
+        from scipy.spatial.transform import Rotation
+        rot = Rotation.from_rotvec(z["orient"])
+        cut = np.nonzero(np.degrees((rot[:-1].inv() * rot[1:]).magnitude()) > 90)[0] + 1
+        if len(cut):
+            print(f"orientation switches > 90 deg at {len(cut)} steps: smoothing {len(cut) + 1} stretches separately")
+        sm = {k: np.concatenate([gaussian_smooth(unwrap_rotvec(x) if k != "transl" else x, args.post)
+                                 for x in np.split(z[k], cut)]) for k in ("orient", "pose", "transl")}
         T = lambda a: torch.as_tensor(a, dtype=torch.float32)  # noqa: E731
         with torch.no_grad():
             V, J = hand(betas.expand(len(fr), -1), T(sm["orient"]), T(sm["pose"]), T(sm["transl"]))

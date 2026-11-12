@@ -480,18 +480,25 @@ removed); without propagation 2.93 mm (a stretch stuck near LeapC's start). On t
 Bug found and fixed: fits that start each frame afresh can switch between the two axis-angle forms of the same
 orientation (e.g. 132° about u and 228° about −u); smoothing then averaged them into a hand turned ~180° (worst
 frames 50–63 mm). `fit_mano.unwrap_rotvec` now makes orient / pose continuous before `--post` smoothing (rotations
-unchanged, 0.0000°). Worst frames after the fix: 10–18 mm, all fast moments in wrist rotation.
+unchanged, 0.0000°). That left 10–18 mm frames in wrist rotation: a flat hand seen edge-on fits almost equally well
+with palm and back swapped (mesh moves 50–80 mm, joints stay within LeapC's 14–22 mm, fingers point the same way),
+and the batched fit switched between the two at 8 steps (wrist rotation) and 1 (free fast). `--post` now smooths each
+stretch between switches (orientation step > 90°) separately: worst frame 7.8 mm (free fast), wrist rotation
+2.58 / 3.23 mm. Which of the two meshes is right at a switch is not decided; the joint labels are nearly the same.
+
+Training data for the teammate's `train_kaggle.ipynb`: `tools/pack_drive.py` → `drive_upload/` (13 zips, 1.7 GB, only
+labelled frame pairs; tested with the notebook's own loader, pixels identical).
 
 | session | pose | frames | surface mm (median / p90) | speed mm/s | jitter | vs LeapC raw / offset removed |
 |---|---|---|---|---|---|---|
 | 232548 | open close slow | 240 | 2.39 / 2.58 | 49 | 0.84 | 16.4 / 7.6 |
 | 232631 | finger counting | 254 | 2.47 / 2.91 | 77 | 1.13 | 16.1 / 9.6 |
 | 232713 | pinches each finger | 285 | 2.38 / 2.67 | 112 | 1.27 | 16.7 / 9.0 |
-| 232756 | wrist rotation | 262 | 2.60 / 3.45 | 126 | 1.67 | 16.4 / 12.6 |
+| 232756 | wrist rotation | 262 | 2.58 / 3.23 | 120 | 1.61 | 16.3 / 12.4 |
 | 232838 | free slow | 339 | 2.43 / 2.80 | 194 | 1.26 | 16.7 / 11.4 |
 | 232944 | free fast | 412 | 2.47 / 3.02 | 315 | 1.86 | 15.8 / 13.4 |
 
-By speed: 0–50 mm/s 2.35 mm, 50–150 2.40, 150–400 2.50, 400+ 2.70 (p90 4.39). Before smoothing every session is
+By speed: 0–50 mm/s 2.35 mm, 50–150 2.40, 150–400 2.50, 400+ 2.68 (p90 3.47). Before smoothing every session is
 2.27–2.43 mm. MANO vs LeapC (offset removed) is 9–13 mm, higher than N8's still poses (2–3 mm) and like N8's motion
 (7–11 mm); tips 17.9 mm. Numbers in `evaluation_n9.json` (`evaluation.json` stays N8).
 
