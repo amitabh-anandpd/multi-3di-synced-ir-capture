@@ -26,6 +26,9 @@ RIGS = [("2026-11-06_000000", "sessions/2026-11-06_033648/rig.json"),
 
 
 def rig_for(name):
+    pinned = os.path.join("sessions", name, "rig.json")  # pinned by process.py / tools/set_rig.py
+    if os.path.exists(pinned):
+        return pinned
     path = None
     for start, p in RIGS:
         if name >= start:

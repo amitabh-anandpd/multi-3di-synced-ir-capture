@@ -228,7 +228,11 @@ Same rules: each milestone has an exit check, results go in STATUS.md.
 - Mount both cameras rigidly (clamps / screwed to a board); mark their positions.
 - `tools/rig_check.py <session>`: fuse the first ~150 frames of a hand recording and print the same-surface
   gap. Run it on the first hand recording of every sitting before recording more.
-- A board session at the start of each recording day (or whenever the check fails).
+- A board session at the start and the end of every sitting, and right after any bump. Each hand session keeps
+  its own rig (`<session>/rig.json`, pinned by process.py; `tools/set_rig.py` assigns a board's rig), so a moved
+  camera only costs a recalibration, never a re-recording.
+- (Tried 2026-11-12: rig from both cameras' LeapC palm paths — 7–36° off, not usable. A MANO-based self-calibration
+  would be the software route; not planned now.)
 
 **Exit:** every session that goes into the dataset has a rig check ≤ 3 mm recorded next to it.
 
@@ -237,8 +241,10 @@ Same rules: each milestone has an exit check, results go in STATUS.md.
   Settles whether bright edges (and so fingertips) are inflated, and by how much.
 - Camera hold-out: fit MANO to cam_A's points only, measure how far cam_B's points are from it (and back).
   Shows how much a fit is trusted where only one camera sees the hand.
-- Hand-clicked 2D keypoints: extend `tools/label_hands.py` to click the 21 joints on ~40 IR frames per camera
-  (still and moving); project the MANO joints into the images and compare (px, and mm at the hand's depth).
+- Hand-clicked 2D keypoints: `tools/click_joints.py` (21 joints, 2 frames per camera per fitted session = 52
+  frames; hidden joints skipped) and `tools/eval_clicks.py` (MANO's and LeapC's joints projected into the clicked
+  camera exactly as fused, error in px and mm). Done 2026-11-12: tools built, projection checked on both cameras;
+  clicking pending. The board edge test (`tools/paper_edge.py`) gave stereo edges +5–8 mm (STATUS.md).
 
 **Exit:** a label error estimate per joint type (median, p90) in STATUS.md, and the fingertip question answered
 (with a correction applied if edges are inflated).
@@ -254,7 +260,8 @@ every session.
 
 ## P4 — More people, both hands
 - A MANO shape per person and hand: `shapes/<person>_<side>.json` from that person's still poses (replaces the
-  single `mano_shape.json`; `fit_batch.py --pack` takes `--shape`). Right-hand fitting (MANO_RIGHT) tested.
+  single `mano_shape.json`; every tool takes the session's person and hand from dataset.json; `process.py` fits a
+  missing shape from the still sessions it is given). Right-hand fitting (MANO_RIGHT) tested.
 - Protocol per person and hand (~10 min): 5 still poses (10 s), then 8 motion sessions (30 s): open/close,
   finger counting, pinches, wrist rotation, grasping an object, free slow, free fast, near the edge of the views.
 - Capture warns when FPS < 85 (Control Panel open) and stops if the hand is out of one camera for long.

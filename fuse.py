@@ -24,7 +24,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from segment import Segmenter
-from stereo import angle_deg, write_ply
+from stereo import angle_deg, rig_path, write_ply
 
 
 def normals(P, k=12):
@@ -115,13 +115,16 @@ ap.add_argument("--max-deg", type=float, default=3, help="largest refinement rot
 ap.add_argument("--no-refine", action="store_true")
 ap.add_argument("--ply-every", type=int, default=30)
 ap.add_argument("--max-frames", type=int, default=0, help="stop after this many groups (0 = all)")
+ap.add_argument("--out", help="output folder (default <session>/fused); tools/rig_check.py uses a scratch one")
+ap.add_argument("--max-disp", type=int, default=128,
+                help="SGBM range in px: 128 measures down to ~144 mm from a camera, 192 to ~96 mm (hand held close)")
 args = ap.parse_args()
 
-rig = json.load(open("rig.json"))
+rig = json.load(open(rig_path(args.session)))  # the session's pinned rig, else the current one
 Rb, tb = np.array(rig["cameras"]["cam_B"]["R"]), np.array(rig["cameras"]["cam_B"]["t_mm"])
 groups = json.load(open(os.path.join(args.session, "groups.json")))["groups"]
-sa, sb = Segmenter(args.session, "cam_A"), Segmenter(args.session, "cam_B")
-out = os.path.join(args.session, "fused")
+sa, sb = (Segmenter(args.session, c, max_disp=args.max_disp) for c in ("cam_A", "cam_B"))
+out = args.out or os.path.join(args.session, "fused")
 os.makedirs(out, exist_ok=True)
 cache = {}
 

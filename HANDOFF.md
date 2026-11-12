@@ -13,8 +13,9 @@ PLAN.md has the plan and exit criteria. STATUS.md has every measured result; rea
 | `mano/` | MANO model. **Licence: register at mano.is.tue.mpg.de yourself; never commit or share these files** | Download `MANO_LEFT.pkl` / `MANO_RIGHT.pkl` into `mano/`, then `python tools/convert_mano.py` |
 | `labels/` | 42 hand-painted masks for the N4 check (192 KB) | `python tools/label_hands.py` |
 
-`units/*.json` (per-camera calibration), `rig.json` (cam_B pose relative to cam_A), `mano_shape.json` (hand shape,
-left hand of one person) and `evaluation.json` are in git. These files belong to these two physical cameras
+`units/*.json` (per-camera calibration), `rig.json` (cam_B pose relative to cam_A), `shapes/<person>_<hand>.json`
+(MANO hand shape per person and hand; P01 = the first person, left hand), `dataset.json` and `evaluation*.json` are in
+git. These files belong to these two physical cameras
 (cam_A = serial …6195, cam_B = …6230, see `config.json`) and this rig placement. `rig.json` is from board `sessions/2026-11-11_230458` (cameras moved closer; N9 hand sessions
 2026-11-11_232548 … 232944 fuse at 1.7–2.7 mm). **If either camera moves even slightly, redo the rig calibration**: record a 40 s board session
 (25 mm squares, hold each pose still ~1 s, board facing between the cameras), `pair_frames.py` it, then
@@ -32,6 +33,27 @@ afterwards).
   Ultraleap service.
 - The desk is glossy and reflects the hand in IR, which puts a ghost hand under the desk. Use a matte surface.
 
+## Quick path (PLAN.md P3): record -> Drive in three commands and one Kaggle run
+
+```
+python capture_multi.py --duration 30 --notes "N9 free slow"   # one recording at a time
+python tools/rig_check.py          # after the first hand recording of a sitting: gap <= 3 mm, else recalibrate
+#   a camera moved? record a board, then: python pair_frames.py <board>; python calib_rig.py <board>
+#   python tools/set_rig.py <board> --dates <first hand session> <last hand session>   (those sessions get its rig)
+python process.py --latest 6       # pair, fuse, rig check, pack -> fit_inputs/<session>.npz, rows in dataset.json
+#   Kaggle: upload fit_inputs/<session>.npz as a dataset, run fit_kaggle.ipynb, download params.zip into fit_inputs/
+python finish.py                   # unpack, smooth, evaluate, pack -> drive_upload/<session>.zip, dataset.json
+python dataset.py                  # table of every session in the training set
+```
+
+- New person or hand: record 5 still poses ("... still" in the notes) + motion, then
+  `python process.py --latest 11 --person P02 --hand right` fits `shapes/P02_right.json` first.
+- A hand held away from where the board was held can fail the rig check (2026-11-12 right hand: 5–7 mm with a good
+  rig). `process.py --refine` lets fuse.py correct the rig from the hand points, kept only if it helps on held-out
+  frames (right hand: 1.6–2.5 mm afterwards). Better: move the board through the whole hand space when calibrating.
+- Label accuracy: `python tools/click_joints.py` (click the 21 joints in ~50 frames), then
+  `python tools/eval_clicks.py` (MANO's and LeapC's joints vs the clicks, mm).
+
 ## Pipeline, in order
 
 ```
@@ -44,7 +66,7 @@ python calib_unit.py --fit sessions/2026-11-06_011406 --test sessions/2026-11-05
 python calib_rig.py sessions/2026-11-06_033648 --check sessions/2026-11-06_033854
 
 python fuse.py sessions/2026-11-06_035942                               # -> <session>/fused/ (hands.npz, PLYs, playback.mp4)
-python fit_mano.py --shape sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809
+python fit_mano.py --shape sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809 --person P01
 python fit_mano.py sessions/2026-11-06_035942 --every 2                 # -> <session>/mano/params.npz (CPU, ~1 s/frame)
 python fit_batch.py --pack sessions/2026-11-11_232548                   # faster: pack -> fit on Kaggle GPU (fit_kaggle.ipynb)
 python fit_batch.py --unpack fit_inputs                                 #   -> <session>/mano/params.npz from Kaggle's params.zip

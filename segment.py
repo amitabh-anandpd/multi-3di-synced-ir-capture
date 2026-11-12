@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 
 from depth import Depth, hand_joints, hand_mask, leap_to_unit, tracking_rows
-from stereo import Cam, Unit
+from stereo import Cam, Unit, rig_path
 
 LABELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labels")
 
@@ -49,20 +49,22 @@ def bones(J, wrist):
 
 
 class Segmenter:
-    def __init__(self, session, name, radius=40, min_gray=45, margin=24, fill=True):
+    def __init__(self, session, name, radius=40, min_gray=45, margin=24, fill=True, max_disp=128):
+        """max_disp: SGBM search range in px; the closest measurable depth is f * baseline / max_disp (128: ~144 mm,
+        192: ~96 mm). A hand held closer than that gets wrong or no depth."""
         self.session, self.name = session, name
         meta = json.load(open(os.path.join(session, "session.json")))
         self.cam = Cam(session, name, 800, 1.5, pad=256)
         self.unit = Unit(meta["cameras"][name])
-        self.depth = Depth(self.unit, self.cam)
+        self.depth = Depth(self.unit, self.cam, max_disp=max_disp)
         self.track = tracking_rows(self.cam.dir)
         self.radius, self.min_gray, self.margin, self.fill = radius, min_gray, margin, fill
         # the other camera, for frames this one has no hand in
         self.other = None
-        rig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rig.json")
+        rp = rig_path(session)  # the session's pinned rig, else the current one
         others = [n for n in meta["cameras"] if n != name]
-        if others and os.path.exists(rig_path):
-            rig = json.load(open(rig_path))
+        if others and os.path.exists(rp):
+            rig = json.load(open(rp))
             o = others[0]
             if o in rig["cameras"] and name in rig["cameras"]:
                 ocam = Cam(session, o, 800, 1.5)
@@ -74,9 +76,15 @@ class Segmenter:
                               "R": Rn.T @ Ro, "t": Rn.T @ (to - tn),
                               "frame": {g["frames"][name]: g["frames"][o] for g in groups}}
 
-    def joints(self, frame_id):
-        """(J (25, 3), wrist, elbow) in this unit's frame, or None. Source: own tracking, else the other camera."""
+    def joints(self, frame_id, side=None):
+        """(J (25, 3), wrist, elbow) in this unit's frame, or None. Source: own tracking, else the other camera.
+
+        side ("left" / "right"): skip tracking that calls the hand the other side. A camera seeing the hand from
+        behind often does (cam_B called a left hand "right" in 994 of 1122 frames, 2026-11-11_232548): its joints are
+        then mirrored (thumb on the wrong side) and a MANO fit started from them has palm and back swapped."""
         r = self.track.get(frame_id)
+        if r and side and r[0]["type"] != side:
+            r = None
         if r:
             J, _, wrist = hand_joints(r[0])
             el = np.array([float(r[0][f"elbow_{a}"]) for a in "xyz"])
@@ -85,6 +93,8 @@ class Segmenter:
         o = self.other
         if o and frame_id in o["frame"] and o["frame"][frame_id] in o["track"]:
             r = o["track"][o["frame"][frame_id]][0]
+            if side and r["type"] != side:
+                return None
             J, _, wrist = hand_joints(r)
             el = np.array([float(r[f"elbow_{a}"]) for a in "xyz"])
             P = leap_to_unit(np.vstack([J, wrist, el]), o["unit"], o["b"]) @ o["R"].T + o["t"]

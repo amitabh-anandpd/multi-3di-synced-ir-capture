@@ -1,0 +1,502 @@
+{
+ "people": {
+  "P01": "first person; MANO shape in shapes/P01_left.json"
+ },
+ "sessions": {
+  "2026-11-06_035647": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 open still",
+   "fps": {
+    "cam_A": 87.5,
+    "cam_B": 87.5
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": 3.15,
+   "fit_frames": 269,
+   "smoothing_sigma": 2.0,
+   "surface_mm": 2.7023749633234253,
+   "surface_p90_mm": 3.2781103917145935,
+   "vs_leapc_centred_mm": 16.02308453748731,
+   "drive_zip": "drive_upload\\2026-11-06_035647.zip",
+   "drive_zip_mb": 72
+  },
+  "2026-11-06_035726": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 fist still",
+   "fps": {
+    "cam_A": 85.6,
+    "cam_B": 85.5
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": null,
+   "fit_frames": 269,
+   "smoothing_sigma": 2.0,
+   "surface_mm": 2.5050740464513734,
+   "surface_p90_mm": 2.793973482963154,
+   "vs_leapc_centred_mm": 9.256930365490435,
+   "drive_zip": "drive_upload\\2026-11-06_035726.zip",
+   "drive_zip_mb": 75
+  },
+  "2026-11-06_035752": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 pinch still",
+   "fps": {
+    "cam_A": 82.6,
+    "cam_B": 82.9
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": null,
+   "fit_frames": 259,
+   "smoothing_sigma": 2.0,
+   "surface_mm": 2.4778068112499962,
+   "surface_p90_mm": 2.555511828505238,
+   "vs_leapc_centred_mm": 1.9769216174611375,
+   "drive_zip": "drive_upload\\2026-11-06_035752.zip",
+   "drive_zip_mb": 72
+  },
+  "2026-11-06_035809": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 spread still",
+   "fps": {
+    "cam_A": 85.1,
+    "cam_B": 84.6
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": null,
+   "fit_frames": 268,
+   "smoothing_sigma": 2.0,
+   "surface_mm": 2.4117149108341476,
+   "surface_p90_mm": 2.502356104544129,
+   "vs_leapc_centred_mm": 1.6846115545864324,
+   "drive_zip": "drive_upload\\2026-11-06_035809.zip",
+   "drive_zip_mb": 76
+  },
+  "2026-11-06_035830": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 point still",
+   "fps": {
+    "cam_A": 79.2,
+    "cam_B": 79.0
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": 2.34,
+   "fit_frames": 242,
+   "smoothing_sigma": 2.0,
+   "surface_mm": 2.370784305086595,
+   "surface_p90_mm": 2.4810538440473824,
+   "vs_leapc_centred_mm": 3.0963467553677337,
+   "drive_zip": "drive_upload\\2026-11-06_035830.zip",
+   "drive_zip_mb": 65
+  },
+  "2026-11-06_035901": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 slow motion",
+   "fps": {
+    "cam_A": 87.3,
+    "cam_B": 87.6
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": 2.16,
+   "fit_frames": 561,
+   "smoothing_sigma": 1.0,
+   "surface_mm": 2.7202820589625847,
+   "surface_p90_mm": 2.9360921519632037,
+   "vs_leapc_centred_mm": 7.285088104767424,
+   "drive_zip": "drive_upload\\2026-11-06_035901.zip",
+   "drive_zip_mb": 153
+  },
+  "2026-11-06_035942": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N2 fast motion",
+   "fps": {
+    "cam_A": 85.4,
+    "cam_B": 85.4
+   },
+   "rig_board": "sessions/2026-11-06_033648",
+   "rig_gap_mm": null,
+   "fit_frames": 804,
+   "smoothing_sigma": 1.0,
+   "surface_mm": 3.142786243194948,
+   "surface_p90_mm": 3.6815731726756176,
+   "vs_leapc_centred_mm": 11.285888684889944,
+   "drive_zip": "drive_upload\\2026-11-06_035942.zip",
+   "drive_zip_mb": 220
+  },
+  "2026-11-11_232548": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 open close slow",
+   "fps": {
+    "cam_A": 51.6,
+    "cam_B": 52.0
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 1.72,
+   "fit_frames": 479,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.3932249508773027,
+   "surface_p90_mm": 2.5792290062143635,
+   "vs_leapc_centred_mm": 7.6365601104437735,
+   "drive_zip": "drive_upload\\2026-11-11_232548.zip",
+   "drive_zip_mb": 141,
+   "rig_overlap_pct": 88,
+   "fused_frames": 492,
+   "fused_every": 3,
+   "fit_input": "fit_inputs\\2026-11-11_232548.npz",
+   "palm_back_switches": 0,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-11_232631": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 finger counting",
+   "fps": {
+    "cam_A": 53.2,
+    "cam_B": 53.7
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 1.81,
+   "fit_frames": 507,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.4709545503958283,
+   "surface_p90_mm": 2.912587975147673,
+   "vs_leapc_centred_mm": 9.610158166663979,
+   "drive_zip": "drive_upload\\2026-11-11_232631.zip",
+   "drive_zip_mb": 151,
+   "palm_back_switches": 0,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-11_232713": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 pinches each finger",
+   "fps": {
+    "cam_A": 59.0,
+    "cam_B": 59.3
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.32,
+   "fit_frames": 569,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.3780324695007877,
+   "surface_p90_mm": 2.6697343584648676,
+   "vs_leapc_centred_mm": 8.963096337908931,
+   "drive_zip": "drive_upload\\2026-11-11_232713.zip",
+   "drive_zip_mb": 164,
+   "palm_back_switches": 0,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-11_232756": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 wrist rotation",
+   "fps": {
+    "cam_A": 59.2,
+    "cam_B": 59.1
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.42,
+   "fit_frames": 524,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.5817266685140687,
+   "surface_p90_mm": 3.2348471761027118,
+   "vs_leapc_centred_mm": 12.359663727501594,
+   "drive_zip": "drive_upload\\2026-11-11_232756.zip",
+   "drive_zip_mb": 156,
+   "palm_back_switches": 8,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-11_232838": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 free slow",
+   "fps": {
+    "cam_A": 77.5,
+    "cam_B": 77.4
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.2,
+   "fit_frames": 677,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.4306529073236938,
+   "surface_p90_mm": 2.800746767121306,
+   "vs_leapc_centred_mm": 11.415341256638868,
+   "drive_zip": "drive_upload\\2026-11-11_232838.zip",
+   "drive_zip_mb": 201,
+   "palm_back_switches": 0,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-11_232944": {
+   "person": "P01",
+   "hand": "left",
+   "notes": "N9 free fast",
+   "fps": {
+    "cam_A": 59.1,
+    "cam_B": 59.3
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.67,
+   "fit_frames": 824,
+   "smoothing_sigma": 1,
+   "surface_mm": 2.471841079293562,
+   "surface_p90_mm": 3.0243588413660407,
+   "vs_leapc_centred_mm": 13.464650682731662,
+   "drive_zip": "drive_upload\\2026-11-11_232944.zip",
+   "drive_zip_mb": 244,
+   "palm_back_switches": 1,
+   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+  },
+  "2026-11-12_103347": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right open still",
+   "fps": {
+    "cam_A": 88.7,
+    "cam_B": 88.8
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 1.76,
+   "rig_overlap_pct": 97,
+   "fused_frames": 293,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103347.npz",
+   "fit_frames": 293,
+   "smoothing_sigma": 2,
+   "palm_back_switches": 0,
+   "surface_mm": 2.463670044015403,
+   "surface_p90_mm": 2.5385634814469635,
+   "vs_leapc_centred_mm": 1.1500857934383377,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103347.zip",
+   "drive_zip_mb": 89
+  },
+  "2026-11-12_103432": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right fist still",
+   "fps": {
+    "cam_A": 89.2,
+    "cam_B": 89.2
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 1.89,
+   "rig_overlap_pct": 94,
+   "fused_frames": 297,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103432.npz",
+   "fit_frames": 297,
+   "smoothing_sigma": 2,
+   "palm_back_switches": 0,
+   "surface_mm": 2.3443398639458985,
+   "surface_p90_mm": 2.8051951618568745,
+   "vs_leapc_centred_mm": 7.833685052337651,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103432.zip",
+   "drive_zip_mb": 87
+  },
+  "2026-11-12_103509": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right pinch still",
+   "fps": {
+    "cam_A": 87.8,
+    "cam_B": 87.4
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.47,
+   "rig_overlap_pct": 85,
+   "fused_frames": 288,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103509.npz",
+   "fit_frames": 288,
+   "smoothing_sigma": 2,
+   "palm_back_switches": 0,
+   "surface_mm": 2.4971644721484827,
+   "surface_p90_mm": 2.668126386934283,
+   "vs_leapc_centred_mm": 3.975835222867453,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103509.zip",
+   "drive_zip_mb": 86
+  },
+  "2026-11-12_103540": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right spread still",
+   "fps": {
+    "cam_A": 88.2,
+    "cam_B": 88.5
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 1.58,
+   "rig_overlap_pct": 86,
+   "fused_frames": 290,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103540.npz",
+   "fit_frames": 290,
+   "smoothing_sigma": 2,
+   "palm_back_switches": 0,
+   "surface_mm": 2.540636932166299,
+   "surface_p90_mm": 2.6414503238628324,
+   "vs_leapc_centred_mm": 1.3443519632257301,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103540.zip",
+   "drive_zip_mb": 89
+  },
+  "2026-11-12_103619": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right point still",
+   "fps": {
+    "cam_A": 89.2,
+    "cam_B": 89.2
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 5.84,
+   "rig_overlap_pct": 85,
+   "fused_frames": 294,
+   "fused_every": 3,
+   "rig_refined": false
+  },
+  "2026-11-12_103645": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right open close slow",
+   "fps": {
+    "cam_A": 85.3,
+    "cam_B": 85.1
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.28,
+   "rig_overlap_pct": 90,
+   "fused_frames": 801,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103645.npz",
+   "fit_frames": 801,
+   "smoothing_sigma": 1,
+   "palm_back_switches": 0,
+   "surface_mm": 2.2867405447438838,
+   "surface_p90_mm": 2.5502469786887785,
+   "vs_leapc_centred_mm": 9.225045392658195,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103645.zip",
+   "drive_zip_mb": 247
+  },
+  "2026-11-12_103737": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right finger counting",
+   "fps": {
+    "cam_A": 88.4,
+    "cam_B": 88.4
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.32,
+   "rig_overlap_pct": 89,
+   "fused_frames": 865,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103737.npz",
+   "fit_frames": 865,
+   "smoothing_sigma": 1,
+   "palm_back_switches": 0,
+   "surface_mm": 2.136408765166025,
+   "surface_p90_mm": 2.3790126824120357,
+   "vs_leapc_centred_mm": 7.395481143825958,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103737.zip",
+   "drive_zip_mb": 266
+  },
+  "2026-11-12_103822": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right pinches each finger",
+   "fps": {
+    "cam_A": 81.7,
+    "cam_B": 81.6
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.71,
+   "rig_overlap_pct": 85,
+   "fused_frames": 752,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_103822.npz",
+   "fit_frames": 751,
+   "smoothing_sigma": 1,
+   "palm_back_switches": 0,
+   "surface_mm": 2.4135199259370124,
+   "surface_p90_mm": 2.713282922695246,
+   "vs_leapc_centred_mm": 9.143637077921284,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_103822.zip",
+   "drive_zip_mb": 226
+  },
+  "2026-11-12_103904": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right wrist rotation",
+   "fps": {
+    "cam_A": 88.4,
+    "cam_B": 88.5
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 3.68,
+   "rig_overlap_pct": 58,
+   "fused_frames": 863,
+   "fused_every": 3,
+   "rig_refined": false
+  },
+  "2026-11-12_103949": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right free slow",
+   "fps": {
+    "cam_A": 87.9,
+    "cam_B": 87.9
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 5.77,
+   "rig_overlap_pct": 83,
+   "fused_frames": 855,
+   "fused_every": 3,
+   "rig_refined": false
+  },
+  "2026-11-12_104028": {
+   "person": "P01",
+   "hand": "right",
+   "notes": "P01 right free fast",
+   "fps": {
+    "cam_A": 85.1,
+    "cam_B": 84.9
+   },
+   "rig_board": "sessions/2026-11-11_230458",
+   "rig_gap_mm": 2.69,
+   "rig_overlap_pct": 92,
+   "fused_frames": 1192,
+   "fused_every": 2,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\\2026-11-12_104028.npz",
+   "fit_frames": 1192,
+   "smoothing_sigma": 1,
+   "palm_back_switches": 0,
+   "surface_mm": 2.262988410731827,
+   "surface_p90_mm": 2.614096227302275,
+   "vs_leapc_centred_mm": 6.779167542418065,
+   "evaluation": "fit_inputs\\evaluation_20261112_1959.json",
+   "drive_zip": "drive_upload\\2026-11-12_104028.zip",
+   "drive_zip_mb": 361
+  }
+ }
+}

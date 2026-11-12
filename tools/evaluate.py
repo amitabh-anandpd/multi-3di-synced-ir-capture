@@ -21,7 +21,7 @@ import torch
 from scipy.spatial import cKDTree
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from fit_mano import MANO_TO_LEAP, Hand, load_fused, surface_samples  # noqa: E402
+from fit_mano import MANO_TO_LEAP, Hand, load_fused, load_shape, surface_samples  # noqa: E402
 from segment import Segmenter  # noqa: E402
 from session_io import load_rows  # noqa: E402
 
@@ -32,14 +32,15 @@ BANDS = [(0, 50), (50, 150), (150, 400), (400, 1e9)]
 ap = argparse.ArgumentParser()
 ap.add_argument("sessions", nargs="+")
 ap.add_argument("--every", type=int, default=2, help="evaluate every Nth fitted frame")
+ap.add_argument("--out", default="evaluation.json")
 args = ap.parse_args()
 
-sh = json.load(open("mano_shape.json"))
-hand = Hand(sh["side"])
-betas = torch.tensor([sh["betas"]], dtype=torch.float32)
 T = lambda a: torch.as_tensor(a, dtype=torch.float32)  # noqa: E731
-rows, summary = [], {}
+rows, summary, hands = [], {}, {}
 for s in args.sessions:
+    sh = load_shape(s)  # this session's person and hand
+    hand = hands.setdefault(sh["side"], Hand(sh["side"]))
+    betas = torch.tensor([sh["betas"]], dtype=torch.float32)
     note = json.load(open(os.path.join(s, "session.json")))["notes"].replace("N2 ", "")
     z = np.load(os.path.join(s, "mano", "smoothed.npz"))
     fr, J = z["frames"], z["joints"]
@@ -57,7 +58,7 @@ for s in args.sessions:
     for i in range(0, len(fr), args.every):
         f = int(fr[i])
         p2m = float(np.median(cKDTree(surface_samples(V[i], hand.faces)).query(fused[f])[0]))
-        lj = seg.joints(f)
+        lj = seg.joints(f, side=sh["side"])  # mirrored (other-side) tracking is not a fair reference
         diff = None
         if lj is not None:
             L21 = np.vstack([lj[0], lj[1]])[MANO_TO_LEAP]
@@ -126,5 +127,5 @@ for r in worst:
 json.dump({"sessions": summary, "speed_bands": bands, "vs_leapc_by_joint_mm": allj,
            "vs_leapc_centred_by_joint_mm": allc,
            "worst": [{k: r[k] for k in ("session", "pose", "frame", "p2m", "speed")} for r in worst]},
-          open("evaluation.json", "w"), indent=2)
-print("\nwrote evaluation.json")
+          open(args.out, "w"), indent=2)
+print(f"\nwrote {args.out}")

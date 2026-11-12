@@ -7,7 +7,8 @@ Needs mano/MANO_LEFT_np.pkl / MANO_RIGHT_np.pkl (tools/convert_mano.py) and <ses
 Everything is in cam_A's unit frame, mm (MANO's metres x 1000).
 
 --shape: one MANO shape (betas) for the person, fitted jointly with a pose per frame on --shape-frames
-frames from still sessions; saved to mano_shape.json. Without --shape, the saved shape is used.
+frames from still sessions; saved to shapes/<person>_<side>.json (--person, default P01). Without --shape, the shape of
+the session's person and hand (dataset.json row; P01 / left if it has none) is used.
 
 Per frame: start from the previous frame's pose (the first frame: from LeapC's joints), then minimise
   point-to-surface distance of the fused points (point-to-plane at the nearest MANO vertex, trimmed)
@@ -84,37 +85,70 @@ def data_loss(v, n, pts, trim=0.8):
     return torch.topk(r, k, largest=False).values.mean()
 
 
+def shape_path(person, side):
+    return os.path.join("shapes", f"{person}_{side}.json")
+
+
+def person_hand(session):
+    """(person, hand) of a session from dataset.json; P01 / left (the first person) when it has no row yet."""
+    try:
+        row = json.load(open("dataset.json"))["sessions"].get(os.path.basename(os.path.normpath(session)), {})
+    except FileNotFoundError:
+        row = {}
+    return row.get("person", "P01"), row.get("hand", "left")
+
+
+def load_shape(session=None, person=None, side=None):
+    """The MANO shape (betas, side) of the person and hand of a session: shapes/<person>_<side>.json."""
+    if session is not None:
+        person, side = person_hand(session)
+    p = shape_path(person or "P01", side or "left")
+    if not os.path.exists(p):
+        raise SystemExit(f"no hand shape {p}: fit it first from that person's still sessions:\n"
+                         f"  python fit_mano.py --shape <still sessions> --person {person or 'P01'}")
+    return json.load(open(p))
+
+
 def load_fused(session):
     z = np.load(os.path.join(session, "fused", "hands.npz"))
     P, O, F = z["points"], z["offsets"], z["frames"]
     return [(int(F[i, 0]), P[O[i]:O[i + 1]]) for i in range(len(F))]
 
 
-def leap_joints_camA(session):
-    """frame_id -> (21, 3) LeapC joints in MANO order, cam_A unit frame; and the hand side (majority)."""
+def leap_joints_camA(session, side=None):
+    """frame_id -> (21, 3) LeapC joints in MANO order, cam_A unit frame; and the hand side.
+
+    Only tracking that calls the hand `side` is used (default: the session's hand in dataset.json, else cam_A's
+    majority): a camera seeing the hand from behind often calls it the other hand, and its joints are then mirrored
+    (2026-11-11_232756: every palm/back switch of the fit was where the start changed between cam_A "left" and cam_B
+    "right"). Frames cam_A has no (right-side) hand in take cam_B's joints, moved over with rig.json."""
     meta = json.load(open(os.path.join(session, "session.json")))
     cam = Cam(session, "cam_A", 800, 1.5)
     unit = Unit(meta["cameras"]["cam_A"])
-    out, sides = {}, []
-    with open(os.path.join(cam.dir, "tracking.csv")) as f:
-        for r in csv.DictReader(f):
-            fid = int(r["frame_id"])
-            if fid in out:
-                continue
-            J, _, wrist = hand_joints(r)
-            P = leap_to_unit(np.vstack([J, wrist]), unit, cam.baseline)
-            out[fid] = P[MANO_TO_LEAP]
-            sides.append(r["type"])
-    if len(out) < 0.5 * len(cam.rows):  # cam_A lost the hand: take cam_B's joints, moved over with rig.json
-        from segment import Segmenter
-        seg = Segmenter(session, "cam_A")
-        for r in cam.rows:
-            fid = int(r["frame_id"])
-            if fid not in out:
-                jt = seg.joints(fid)
-                if jt is not None:
-                    out[fid] = np.vstack([jt[0], jt[1]])[MANO_TO_LEAP]
-    return out, (max(set(sides), key=sides.count) if sides else None)
+    rows = list(csv.DictReader(open(os.path.join(cam.dir, "tracking.csv"))))
+    if side is None:
+        try:
+            side = json.load(open("dataset.json"))["sessions"][os.path.basename(os.path.normpath(session))]["hand"]
+        except (FileNotFoundError, KeyError):
+            sides = [r["type"] for r in rows]
+            side = max(set(sides), key=sides.count) if sides else None
+    out = {}
+    for r in rows:
+        fid = int(r["frame_id"])
+        if fid in out or (side and r["type"] != side):
+            continue
+        J, _, wrist = hand_joints(r)
+        P = leap_to_unit(np.vstack([J, wrist]), unit, cam.baseline)
+        out[fid] = P[MANO_TO_LEAP]
+    from segment import Segmenter
+    seg = Segmenter(session, "cam_A")
+    for r in cam.rows:
+        fid = int(r["frame_id"])
+        if fid not in out:
+            jt = seg.joints(fid, side=side)
+            if jt is not None:
+                out[fid] = np.vstack([jt[0], jt[1]])[MANO_TO_LEAP]
+    return out, side
 
 
 def sub(P, n, rng):
@@ -226,12 +260,12 @@ if __name__ == "__main__":
     ap.add_argument("session", nargs="?")
     ap.add_argument("--shape", nargs="+", help="still sessions to fit the person's shape on")
     ap.add_argument("--shape-frames", type=int, default=12, help="frames used for the shape, in total")
+    ap.add_argument("--person", default="P01", help="--shape: person id; writes shapes/<person>_<side>.json")
     ap.add_argument("--every", type=int, default=1, help="fit every Nth fused frame")
     ap.add_argument("--max-frames", type=int, default=0)
     ap.add_argument("--ply-every", type=int, default=30)
     ap.add_argument("--post", type=float, help="smooth an existing fit over time with this sigma (frames) and report")
     args = ap.parse_args()
-    shape_file = "mano_shape.json"
 
     if args.shape:
         side_votes, items = [], []
@@ -242,6 +276,8 @@ if __name__ == "__main__":
             fr = [f for f in load_fused(s) if f[0] in leap and len(f[1]) > 2000]
             items += [(s, fr[k], leap) for k in np.linspace(0, len(fr) - 1, per).astype(int)]
         side = max(set(side_votes), key=side_votes.count)
+        shape_file = shape_path(args.person, side)
+        os.makedirs("shapes", exist_ok=True)
         hand = Hand(side)
         betas = torch.zeros(1, 10)
         inits = [init_from_leap(hand, betas, lp[f[0]]) for _, f, lp in items]
@@ -254,7 +290,8 @@ if __name__ == "__main__":
         d = [point_to_mesh(hand, betas, o[i:i + 1], p[i:i + 1], t[i:i + 1], f[1]) for i, f in enumerate(frames)]
         _, j = hand(betas, o[:1], p[:1], t[:1])
         fl = finger_lengths(j[0].detach().numpy())
-        json.dump({"side": side, "betas": betas.detach().numpy().ravel().tolist(), "sessions": args.shape,
+        json.dump({"person": args.person, "side": side, "betas": betas.detach().numpy().ravel().tolist(),
+                   "sessions": args.shape,
                    "frames": [f[0] for f in frames], "point_to_mesh_median_mm": float(np.median(d)),
                    "finger_lengths_mm": fl}, open(shape_file, "w"), indent=2)
         print(f"shape ({side} hand) from {len(frames)} frames in {time.time() - t0:.0f} s: point-to-mesh median "
@@ -263,7 +300,7 @@ if __name__ == "__main__":
         print("wrote", shape_file)
 
     if args.session and args.post is not None:
-        sh = json.load(open(shape_file))
+        sh = load_shape(args.session)
         hand = Hand(sh["side"])
         betas = torch.tensor([sh["betas"]], dtype=torch.float32)
         out = os.path.join(args.session, "mano")
@@ -311,7 +348,7 @@ if __name__ == "__main__":
         print("wrote", os.path.join(out, "overlay.mp4"), "and smoothed.npz")
 
     elif args.session:
-        sh = json.load(open(shape_file))
+        sh = load_shape(args.session)
         hand = Hand(sh["side"])
         betas = torch.tensor([sh["betas"]], dtype=torch.float32)
         leap, _ = leap_joints_camA(args.session)

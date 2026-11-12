@@ -507,6 +507,100 @@ By speed: 0–50 mm/s 2.35 mm, 50–150 2.40, 150–400 2.50, 400+ 2.68 (p90 3.4
 2.27–2.43 mm. MANO vs LeapC (offset removed) is 9–13 mm, higher than N8's still poses (2–3 mm) and like N8's motion
 (7–11 mm); tips 17.9 mm. Numbers in `evaluation_n9.json` (`evaluation.json` stays N8).
 
+## P3 one command per step, P1 rig check (2026-11-12) — done
+
+- `process.py` (pair → fps → fuse → rig check → pack), `finish.py` (Kaggle params.zip → smooth → evaluate → Drive zip),
+  `dataset.py` / `dataset.json` (one row per session; people as ids), `tools/rig_check.py` (150 groups into a scratch
+  folder, ~1.5 min; `fuse.py --out`), `tools/evaluate.py --out`.
+- End-to-end test on the N9 data: process.py on 232548 in 4.5 min (gap 1.72 mm, 479 frames packed — same as the
+  first run); finish.py on the Kaggle params.zip reproduced every N9 number (surface 2.38–2.58 mm, worst frame 7.81 mm,
+  same zip sizes). rig_check on 232944: 2.71 mm, OK, flags 59 FPS.
+- dataset.json (backfilled): 13 sessions, 6,252 fitted frames, all P01 left hand. 2026-11-06_035647 (open still) had a
+  3.15 mm rig gap, just over P1's 3 mm; four N2 sessions have no recorded gap.
+
+## P2 edge test with the checkerboard (2026-11-12, `tools/paper_edge.py`) — stereo edges stick out ~5–8 mm
+
+Recorded with the checkerboard (paper on a backing) instead of plain paper: 103212 facing between the cameras,
+103250 tilted. cam_A found the board in neither (too oblique), so cam_B only. Per side, the paper edge is taken from
+the image (half-brightness between the white margin and the background, along lines out from the printed squares;
+corner scale 0.997–0.998) and compared with the 95th percentile outward of the SGBM points on the board plane.
+Only sides with dark background behind them are clean (overlay checked): 103212 top and right, 103250 right. The
+others have the desk, the box or the holding hand on the board's plane beyond the edge (−12 … +25 mm, not used).
+
+| clean side | as now | left-right check (standard SGBM mode) | erode 3 px | erode 5 px |
+|---|---|---|---|---|
+| 103212 top | +7.7 mm | +7.6 | +4.4 | +3.5 |
+| 103212 right | +6.7 | +5.6 | +4.3 | +3.4 |
+| 103250 right | +4.8 | +4.5 | +1.9 | +1.0 |
+
+So the cloud sticks out 5–8 mm past a bright edge, the size of the fingertip overshoot (4–9 mm, N7): the fingertips
+are most likely inflated by stereo, not MANO being too short. The 3-way SGBM mode ignores `disp12MaxDiff`; the
+left-right check in the standard mode barely helps (not occlusion). Eroding the region with depth by 3 px removes
+~3 mm. Next: try a 2–3 px erosion of the hand's depth region in `segment.py` and measure fingertip overshoot,
+point-to-mesh and finger coverage. Caveats: one camera, 6 frames per recording, a board rather than plain paper.
+
+## Right hand fails the rig check; boards scatter; rig per session (2026-11-12) — P1
+
+- Rig check of the left hand at 10:21 (102120): 1.98 mm. The 11 right-hand sessions after it (103347–104028):
+  5.1–7.1 mm with the same rig. First read as a camera bump — **wrong**: the static room around the edge of each image
+  (phase correlation, 41-frame medians, response 0.66–0.95) shifted ≤ 0.15 px in both cameras from 10:21 to 13:43.
+- Board calibrations with the cameras fixed: 230458 (last night, 64 still views) 92.2°, 113746 (32 views, 62 FPS)
+  93.6°, 134335 (36 views) 89.5°. So a board with ~35 still views is only good to a few degrees; 230458 is kept
+  (`./rig.json` and pinned to all 2026-11-12 sessions).
+- Not the cause of the right-hand failure: LeapC side labels (both cameras say "right" in the motion sessions),
+  the SGBM range (`--max-disp 192`: 6.43 → 6.23 mm), the distance (left 214 / 182 mm, right 206 / 230 mm from
+  cam_A / cam_B). Likely: the calibration is good where the boards were held and off by ~4–5° where the right hand
+  was (as N1's 5.7° desk-plane mismatch outside the board volume).
+- Per-session refinement from the hand points (fuse.py, held-out check) with wider limits (≤ 6–7°, ≤ 25 mm): open still
+  3.7° / 9.9 mm, held-out 6.83 → 3.79 mm, same-surface gap 1.78 mm; finger counting 5.3° / 12.4 mm and free fast
+  4.3° / 12.7 mm (6.7 → 3.9, 6.5 → 4.0; these two agree within 1.0° / 2 mm); wrist rotation 7.7° / 27 mm and no
+  held-out gain (6.67 → 6.64, not used). Open still differs from the other two by 2.5–2.9°: no single correction.
+  `process.py --refine` (≤ 6° / 20 mm) fuses with it; the rig check then decides what is packed.
+- Rig per session: `stereo.rig_path(session)` — a session's own `rig.json` wins over `./rig.json` (fuse.py,
+  segment.py, motion_gap.py, pack_drive.py). `process.py` pins the current rig into a session before fusing;
+  `tools/set_rig.py <board> <sessions | --dates FROM TO>` gives sessions another board's rig. Pinned now: N2 → board
+  033648, N9 + all 2026-11-12 → board 230458. `tools/rig_check.py` also prints the hand's distance from each camera.
+- Rig from the hand itself, tried: matching the palm-centre and wrist paths of both cameras' LeapC tracking (robust
+  Kabsch, ~700–1,500 pairs per session) on the six N9 sessions gives 7–36° and 17–39 mm away from the board rig
+  (residual 6–12 mm): LeapC's palm sits differently per view and the hand moves only 5–14 cm. Not usable; a real
+  self-calibration would fit MANO per camera and solve the rig with the poses. Not pursued now.
+- So: one rigid base for both cameras with the cables tied down, a board at the start and end of every sitting and
+  after any bump, boards with many still poses (≥ 60) spread through the whole hand space, and the hand kept in the
+  space the board covered. With a board for every camera position, nothing has to be re-recorded.
+
+## P4 first right hand (2026-11-12, `process.py --person P01 --hand right --refine`)
+
+11 sessions (5 still, 6 motion; 88 FPS). With the per-session rig correction 8 pass the rig check: open still 1.76 mm,
+fist 1.89, pinch 2.47, spread 1.58, open close slow 2.28, finger counting 2.32, pinches 2.71, free fast 2.69. Not
+packed: point still 5.84 (correction 14°, rejected), wrist rotation 3.68 (no held-out gain), free slow 5.77 (6.7° over
+the limit). `shapes/P01_right.json` from the 4 still sessions: 2.72 mm; MANO MCP→tip thumb 95.3, index 81.6, middle
+84.2, ring 80.6, little 63.0 mm (left hand: 95.4 / 82.0 / 82.6 / 79.5 / 61.0). 5,477 frames fitted on Kaggle.
+
+`finish.py` (fit_inputs/evaluation_20261112_1959.json): MANO surface 2.14–2.54 mm per session (open still 2.46, fist
+2.34, pinch 2.50, spread 2.54, open close slow 2.29, finger counting 2.14, pinches 2.41, free fast 2.26), worst frame
+4.04 mm (left hand N9: 7.81); jitter 0.12–1.27; no palm/back switches (the first sessions packed with the wrong-side
+LeapC filter); MANO vs LeapC with the offset removed 1.2–9.2 mm (left N9: 7.6–13.5). dataset.json: 24 rows, 11,029
+fitted frames (P01 left 6,252 + right 4,777 after smoothing).
+
+## P2 hand-clicked joints (2026-11-12, `tools/click_joints.py`, `tools/eval_clicks.py`) — first ground truth
+
+50 frames clicked (2 per camera from each of the 13 fitted P01-left sessions). Projection of MANO into both cameras
+checked on an overlay. All frames: MANO 13.1 mm median from the clicks (p90 33.1), LeapC 14.0 (30.7). Overlays: on
+the fist (035726) the clicks follow the outline (joints not visible; excluded); wrist rotation 232756 cam_A is a
+real MANO failure (88 mm, hand turned the wrong way: the mirrored-start session, fixed in code but not refitted);
+fast/curled poses are off.
+
+Without the fist (46 frames): per-frame MANO < 10 mm in 16 frames (LeapC 8), 10–20 mm in 24 (25), ≥ 20 mm in 6 (10):
+232944 cam_A/B, 035647 cam_A, 035942 cam_A/B, 232756 cam_A. On the 40 frames under 20 mm, per joint: wrist 24.6
+(LeapC 17.4; MANO's wrist joint sits inside the hand, the click at the crease), knuckle 10.7 (13.3), middle joint 9.7
+(12.3), end joint 11.0 (11.3), tip 11.8 (19.0) mm — across the view, at the joint's depth.
+
+Along / across the finger (click minus MANO, mm): knuckle −2.8 / 7.7, middle joint +3.4 / 4.7, end joint +6.7 / 4.4,
+tip +6.1 / 3.7. The clicked end joints and tips lie ~6 mm beyond MANO's, and end joints are not affected by stereo
+edge smear: **MANO's fingers are ~6 mm too short**, so the cloud's overshoot past MANO's tips (4–9 mm, N7) is mostly
+real finger, and the board edge test's +5–8 mm does not carry over to fingertips. Next: a shape fit that matches finger
+length (clicked joints from both cameras, triangulated, or a fingertip term), and refit the mirrored-start sessions.
+
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 
 With the Control Panel open, FPS fell to ~50 together (45–58 per camera; which camera was slowest changed

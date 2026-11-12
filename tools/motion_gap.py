@@ -19,6 +19,7 @@ from scipy.spatial import cKDTree
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from segment import Segmenter  # noqa: E402
+from stereo import rig_path  # noqa: E402
 
 
 def joint_speed(cam_dir):
@@ -44,11 +45,10 @@ ap.add_argument("sessions", nargs="+")
 ap.add_argument("--every", type=int, default=9, help="use every Nth frame group (~10 per second)")
 ap.add_argument("--overlap", type=float, default=15)
 args = ap.parse_args()
-rig = json.load(open("rig.json"))
-Rb, tb = np.array(rig["cameras"]["cam_B"]["R"]), np.array(rig["cameras"]["cam_B"]["t_mm"])
-
 rows = []
 for s in args.sessions:
+    rig = json.load(open(rig_path(s)))  # the session's pinned rig, else the current one
+    Rb, tb = np.array(rig["cameras"]["cam_B"]["R"]), np.array(rig["cameras"]["cam_B"]["t_mm"])
     note = json.load(open(os.path.join(s, "session.json")))["notes"]
     groups = json.load(open(os.path.join(s, "groups.json")))["groups"]
     sa, sb = Segmenter(s, "cam_A"), Segmenter(s, "cam_B")

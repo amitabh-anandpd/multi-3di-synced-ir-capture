@@ -189,6 +189,33 @@ class Unit:
         return pts, ref[ok]
 
 
+ROOT = os.path.dirname(os.path.abspath(__file__))
+
+
+def rig_path(session=None):
+    """The rig a session was recorded with: <session>/rig.json when pinned (process.py pins the current one before
+    fusing; tools/set_rig.py assigns another; board sessions hold their own calibration), else ./rig.json."""
+    if session is not None:
+        p = os.path.join(session, "rig.json")
+        if os.path.exists(p):
+            return p
+    return os.path.join(ROOT, "rig.json")
+
+
+def pin_rig(session, src=None):
+    """Copy a rig (default the current ./rig.json) into the session, keeping the one it had as rig_prev.json."""
+    import json
+    import shutil
+    src = src or os.path.join(ROOT, "rig.json")
+    dst = os.path.join(session, "rig.json")
+    if os.path.exists(dst):
+        if os.path.abspath(dst) == os.path.abspath(src):
+            return dst
+        shutil.copy(dst, os.path.join(session, "rig_prev.json"))
+    shutil.copy(src, dst)
+    return json.load(open(dst)).get("board_session")
+
+
 def kabsch(src, dst):
     """R, t minimising |R @ src + t - dst|."""
     cs, cd = src.mean(0), dst.mean(0)

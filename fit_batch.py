@@ -33,8 +33,8 @@ SHIFTS = [1, -1, 2, -2, 4, -4, 8, -8, 16, -16, 1, -1]
 
 
 def pack(session, out_dir, every=1, npts=1500, min_pts=500, seed=0):
-    from fit_mano import leap_joints_camA, load_fused
-    sh = json.load(open("mano_shape.json"))
+    from fit_mano import leap_joints_camA, load_fused, load_shape
+    sh = load_shape(session)  # the shape of this session's person and hand (dataset.json)
     leap, _ = leap_joints_camA(session)
     rng = np.random.default_rng(seed)
     F, P, L, H = [], [], [], []
@@ -255,6 +255,16 @@ def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=Non
         o0[i], p0[i], t0_[i] = init_from_leap(hand, betas, lj[i])
     near = hi[(torch.arange(n, device=DEV)[:, None] - hi[None]).abs().argmin(1)]
     o0, p0, t0_ = o0[near], p0[near], t0_[near]
+    # frames without joints (cam_A lost the hand and cam_B called it the other hand) take the nearest frame's pose,
+    # which can be far away in time: move that hand onto this frame's points (mesh centre -> point-cloud centre)
+    no = ~has
+    if no.any():
+        with torch.no_grad():
+            for s in range(0, n, 512):
+                m = no[s:s + 512]
+                if m.any():
+                    v, _ = hand(betas.expand(int(m.sum()), -1), o0[s:s + 512][m], p0[s:s + 512][m], t0_[s:s + 512][m])
+                    t0_[s:s + 512][m] += pts[s:s + 512][m].mean(1) - v.mean(1)
     t_init = time.time() - t0
     # joint fit in chunks of consecutive frames, neighbours tied together
     res, step = [], chunk - 8  # chunks overlap by 8 frames; the overlap's second copy is dropped
