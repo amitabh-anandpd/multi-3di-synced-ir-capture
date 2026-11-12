@@ -118,8 +118,94 @@ def init_from_leap(hand, betas, lj, iters=300):
     return orient.detach(), pose.detach(), transl.detach()
 
 
-def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=None):
-    z = np.load(path)
+def refine(ob, x, iters, lr, passes, pass_iters):
+    """Optimise a run of frames, then propagation, like fit_mano.py's frame-by-frame tracking: every frame also tries
+    the result of the frame 1, 2, 4, 8 ... before / after it and keeps whichever fits its own points better."""
+    n = len(x[0])
+    x = ob.optimise(x, iters, lr)
+    for sh in SHIFTS[:passes]:
+        if abs(sh) >= n:
+            continue
+        cand = ob.optimise([torch.roll(a, sh, 0) for a in x], pass_iters, lr)
+        with torch.no_grad():
+            better = ob.per_frame(*cand) < ob.per_frame(*x)
+            if sh > 0:
+                better[:sh] = False  # rolled around from the end
+            else:
+                better[sh:] = False
+        x = [torch.where(better[:, None], c, a) for c, a in zip(cand, x)]
+        x = ob.optimise(x, pass_iters, lr)
+    return x
+
+
+def switch_steps(orient, frames, max_gap=6):
+    """Steps i (between frame i and i + 1) where the hand turns > 90 deg within max_gap camera frames: impossible for
+    a real hand (< 0.1 s), so a switch between the palm-front and palm-back fits of a flat hand seen edge-on."""
+    from scipy.spatial.transform import Rotation
+    r = Rotation.from_rotvec(orient.cpu().numpy())
+    turn = np.degrees((r[:-1].inv() * r[1:]).magnitude())
+    return np.nonzero((turn > 90) & (np.diff(frames) <= max_gap))[0]
+
+
+def repair(setup, x, frames, lr=0.02, passes=8, pass_iters=40, iters=150, chunk=256):
+    """Make the orientation consistent through the session.
+
+    Cut at the switches into stretches; refit every stretch starting from its neighbours' orientation and finger pose
+    (= the other one of the two fits); then of the two ways to pick per stretch that have no switch at all (current,
+    other, current, ... or other, current, other, ...), keep the one with the lower total cost (points + LeapC + prior).
+
+    EXPERIMENTAL, off by default (2026-11-12 test, 2026-11-11_232756 frames 0-130): surface 2.77 -> 2.54 mm, but a new
+    switch appeared inside the refitted stretch and its joints moved from 18 to 37 mm from LeapC's. The hand really
+    turns there, and LeapC agrees with the fit on both sides of the original switch, so forcing continuity made the
+    joint labels worse. Deciding which side is right needs ground truth (PLAN.md P2, hand-clicked keypoints)."""
+    hand, betas, faces, pts, lj, has = setup
+    steps = switch_steps(x[0], frames)
+    if not len(steps):
+        return x, "no switches"
+    n = len(frames)
+    bounds = [0] + [int(i) + 1 for i in steps] + [n]
+    spans = list(zip(bounds[:-1], bounds[1:]))
+    cur_cost, alt, alt_cost = [], [], []
+    for k, (a, b) in enumerate(spans):
+        idx = torch.arange(a, b, device=DEV)
+        src = []
+        if k > 0:
+            src.append(a - 1)
+        if k < len(spans) - 1:
+            src.append(b)
+        src = torch.tensor(src, device=DEV)
+        near = src[(idx[:, None] - src[None]).abs().argmin(1)]  # nearest frame of a neighbouring stretch
+        init = [x[0][near], x[1][near], x[2][a:b]]
+        res, c0, c1 = [], 0.0, 0.0
+        for s in range(a, b, chunk):
+            e = min(b, s + chunk)
+            ob = Objective(hand, betas, faces, pts[s:e], lj[s:e], has[s:e].float())
+            y = refine(ob, [v[s - a:e - a] for v in init], iters, lr, passes, pass_iters)
+            with torch.no_grad():
+                c0 += float(ob.per_frame(*(v[s:e] for v in x)).sum())
+                c1 += float(ob.per_frame(*y).sum())
+            res.append(y)
+        alt.append([torch.cat(v) for v in zip(*res)])
+        cur_cost.append(c0)
+        alt_cost.append(c1)
+    pick = []
+    for first in (0, 1):  # 0: stretch 0 keeps its fit, 1: stretch 0 takes the other
+        use = [(k + first) % 2 for k in range(len(spans))]
+        pick.append((sum(alt_cost[k] if u else cur_cost[k] for k, u in enumerate(use)), use))
+    total, use = min(pick)
+    out = [v.clone() for v in x]
+    for k, ((a, b), u) in enumerate(zip(spans, use)):
+        if u:
+            for v, w in zip(out, alt[k]):
+                v[a:b] = w
+    left = len(switch_steps(out[0], frames))
+    msg = (f"{len(steps)} switches, {len(spans)} stretches; per-frame cost kept {pick[0][0] / n:.3f} vs other "
+           f"{pick[1][0] / n:.3f} -> option {pick.index((total, use))}, other fit used for "
+           f"{sum(b - a for (a, b), u in zip(spans, use) if u)} of {n} frames; switches left: {left}")
+    return out, msg
+
+
+def load_setup(z, first=None):
     hand = Hand(str(z["side"]))
     hand.m.to(DEV)
     faces = torch.as_tensor(hand.faces, device=DEV)
@@ -128,6 +214,35 @@ def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=Non
     pts, lj, has = T(z["points"]), T(z["leap"]), torch.as_tensor(z["has_leap"], device=DEV)
     if first:
         pts, lj, has = pts[first[0]:first[1]], lj[first[0]:first[1]], has[first[0]:first[1]]
+    return hand, betas, faces, pts, lj, has
+
+
+def save(path, frames, setup, x):
+    hand, betas = setup[0], setup[1]
+    with torch.no_grad():
+        _, j = hand(betas.expand(len(frames), -1), *x)
+    C = lambda v: v.cpu().numpy()  # noqa: E731
+    np.savez_compressed(path, frames=frames, orient=C(x[0]), pose=C(x[1]), transl=C(x[2]), joints=C(j), betas=C(betas))
+
+
+def repair_file(path):
+    """--repair: fix the switches in an existing <input>_params.npz (keeps the old one as *_params_before_repair.npz)."""
+    z = np.load(path)
+    out = path.replace(".npz", "_params.npz")
+    p = np.load(out)
+    setup = load_setup(z)
+    T = lambda a: torch.as_tensor(a, dtype=torch.float32, device=DEV)  # noqa: E731
+    t0 = time.time()
+    x, msg = repair(setup, [T(p["orient"]), T(p["pose"]), T(p["transl"])], p["frames"])
+    shutil.copy(out, out.replace("_params.npz", "_params_before_repair.npz"))
+    save(out, p["frames"], setup, x)
+    print(f"{path}: {msg} ({time.time() - t0:.0f} s) -> {out}", flush=True)
+
+
+def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=None, fix=False):
+    z = np.load(path)
+    setup = load_setup(z, first)
+    hand, betas, faces, pts, lj, has = setup
     n = len(pts)
     if not has.any():
         raise SystemExit(f"{path}: no frame has LeapC joints to start from")
@@ -146,34 +261,20 @@ def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=Non
     for s in range(0, n, step):
         e = min(n, s + chunk)
         ob = Objective(hand, betas, faces, pts[s:e], lj[s:e], has[s:e].float())
-        x = ob.optimise([a[s:e] for a in (o0, p0, t0_)], iters, lr)
-        # propagation, like fit_mano.py's frame-by-frame tracking: every frame also tries the result of the frame
-        # 1, 2, 4, 8 ... before / after it and keeps whichever fits its own points better
-        for sh in SHIFTS[:passes]:
-            if abs(sh) >= e - s:
-                continue
-            cand = ob.optimise([torch.roll(a, sh, 0) for a in x], pass_iters, lr)
-            with torch.no_grad():
-                better = ob.per_frame(*cand) < ob.per_frame(*x)
-                if sh > 0:
-                    better[:sh] = False  # rolled around from the end
-                else:
-                    better[sh:] = False
-            x = [torch.where(better[:, None], c, a) for c, a in zip(cand, x)]
-            x = ob.optimise(x, pass_iters, lr)
+        x = refine(ob, [a[s:e] for a in (o0, p0, t0_)], iters, lr, passes, pass_iters)
         keep = slice(0 if s == 0 else 8, None)
         res.append([a[keep] for a in x])
         if e == n:
             break
-    orient, pose, transl = (torch.cat(x) for x in zip(*res))
-    with torch.no_grad():
-        _, j = hand(betas.expand(n, -1), orient, pose, transl)
-    out = path.replace(".npz", "_params.npz")
-    C = lambda x: x.cpu().numpy()  # noqa: E731
+    x = [torch.cat(v) for v in zip(*res)]
     frames = z["frames"][first[0]:first[1]] if first else z["frames"]
-    np.savez_compressed(out, frames=frames, orient=C(orient), pose=C(pose), transl=C(transl), joints=C(j),
-                        betas=C(betas))
-    print(f"{path}: {n} frames on {DEV} in {time.time() - t0:.0f} s (start {t_init:.0f} s) -> {out}", flush=True)
+    msg = ""
+    if fix:
+        x, msg = repair(setup, x, frames, lr=lr, pass_iters=pass_iters, chunk=chunk)
+        msg = "; orientation: " + msg
+    out = path.replace(".npz", "_params.npz")
+    save(out, frames, setup, x)
+    print(f"{path}: {n} frames on {DEV} in {time.time() - t0:.0f} s (start {t_init:.0f} s){msg} -> {out}", flush=True)
 
 
 def unpack(folder):
@@ -190,6 +291,7 @@ if __name__ == "__main__":
     g.add_argument("--pack", nargs="+", metavar="SESSION")
     g.add_argument("--fit", nargs="+", metavar="NPZ")
     g.add_argument("--unpack", metavar="FOLDER")
+    g.add_argument("--repair", nargs="+", metavar="NPZ", help="fix palm/back switches in existing <NPZ>_params.npz")
     ap.add_argument("--out", default="fit_inputs")
     ap.add_argument("--every", type=int, default=1, help="--pack: every Nth fused frame")
     ap.add_argument("--iters", type=int, default=200)
@@ -204,5 +306,8 @@ if __name__ == "__main__":
     elif args.fit:
         for p in args.fit:
             fit(p, args.iters, args.chunk, passes=args.passes, first=args.range)
+    elif args.repair:
+        for p in args.repair:
+            repair_file(p)
     else:
         unpack(args.unpack)

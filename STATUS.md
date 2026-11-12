@@ -486,6 +486,11 @@ and the batched fit switched between the two at 8 steps (wrist rotation) and 1 (
 stretch between switches (orientation step > 90°) separately: worst frame 7.8 mm (free fast), wrist rotation
 2.58 / 3.23 mm. Which of the two meshes is right at a switch is not decided; the joint labels are nearly the same.
 
+Repair attempt (2026-11-12, `fit_batch.py --repair`, off by default): on 232756 frames 0–130 it refitted the stretch
+after the switch from the frames before it. Surface 2.77 → 2.54 mm, largest mesh step 56.8 → 34.7 mm, but a new
+switch appeared at step 86 and those frames' joints went from 18.0 to 36.6 mm from LeapC's. Not used; which side of a
+switch is right needs ground truth (PLAN.md P2).
+
 Training data for the teammate's `train_kaggle.ipynb`: `tools/pack_drive.py` → `drive_upload/` (13 zips, 1.7 GB, only
 labelled frame pairs; tested with the notebook's own loader, pixels identical).
 

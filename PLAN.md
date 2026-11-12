@@ -194,3 +194,85 @@ jitter. MANO finger lengths within 5 mm of ruler measurements of the person's ha
 
 ## Phase 2 done
 N0–N8 pass: per-frame fused hand clouds and MANO fits for moving hands, with accuracy recorded.
+
+---
+
+# Build Plan — Phase 3 (a training dataset, and a model trained on it)
+
+Goal: IR image pairs from both cameras with 3D hand labels (MANO fits) that are trustworthy, from several
+people and both hands, packed for `train_kaggle.ipynb`; then a model that predicts the hand from the images
+better than Ultraleap's own tracking does.
+
+Starting point (2026-11-12, STATUS.md N8/N9): 13 fitted sessions, one person's left hand, ~5,800 labelled frame
+pairs (1.7 GB of zips in `drive_upload/`). MANO surface 2.4–2.6 mm from the fused cloud; MANO vs LeapC joints
+9–13 mm with the mean offset removed; no ground truth for the joints yet. Fitting runs on Kaggle
+(`fit_batch.py`, `fit_kaggle.ipynb`). The cameras were moved twice in one evening, each time costing a
+recalibration or the recordings.
+
+Same rules: each milestone has an exit check, results go in STATUS.md.
+
+---
+
+## P0 — Consistent hand orientation in the fits (`fit_batch.py` repair)
+- A flat hand seen edge-on fits almost as well with palm and back swapped; the batched fit switched 9 times
+  (wrist rotation, free fast). `--post` already smooths each stretch between switches separately (worst frame
+  7.8 mm), and the joints change little at a switch.
+- First repair tried (2026-11-12, `fit_batch.py --repair`, off by default): forcing a switch-free orientation fitted
+  the surface better (2.77 → 2.54 mm) but moved the joints from 18 to 37 mm from LeapC's and made a new switch: the
+  hand really turns there. Decide with P2's hand-clicked keypoints which side is right, then repair by that.
+
+**Exit:** at every remaining switch, the kept side is the one closer to the hand-clicked keypoints; worst frame
+≤ 5 mm from the cloud.
+
+## P1 — The rig stays put, and every session proves it
+- Mount both cameras rigidly (clamps / screwed to a board); mark their positions.
+- `tools/rig_check.py <session>`: fuse the first ~150 frames of a hand recording and print the same-surface
+  gap. Run it on the first hand recording of every sitting before recording more.
+- A board session at the start of each recording day (or whenever the check fails).
+
+**Exit:** every session that goes into the dataset has a rig check ≤ 3 mm recorded next to it.
+
+## P2 — How good are the labels? (no ground truth yet)
+- Paper test: white A4 on a dark book, still and tilted; measure the fused paper's size per camera and fused.
+  Settles whether bright edges (and so fingertips) are inflated, and by how much.
+- Camera hold-out: fit MANO to cam_A's points only, measure how far cam_B's points are from it (and back).
+  Shows how much a fit is trusted where only one camera sees the hand.
+- Hand-clicked 2D keypoints: extend `tools/label_hands.py` to click the 21 joints on ~40 IR frames per camera
+  (still and moving); project the MANO joints into the images and compare (px, and mm at the hand's depth).
+
+**Exit:** a label error estimate per joint type (median, p90) in STATUS.md, and the fingertip question answered
+(with a correction applied if edges are inflated).
+
+## P3 — One command per step
+- `process.py <sessions>`: pair → fuse → pack (`fit_inputs/`), with the rig check and FPS in the log.
+- `finish.py`: unpack Kaggle's params.zip → smooth → evaluate → `pack_drive.py`.
+- `dataset.json`: one row per session — person, hand, poses, rig board session, FPS, rig check, frames,
+  surface error, packed zip. The training notebook can read it for splits.
+
+**Exit:** a new recording becomes a Drive-ready zip with two commands and one Kaggle run; `dataset.json` lists
+every session.
+
+## P4 — More people, both hands
+- A MANO shape per person and hand: `shapes/<person>_<side>.json` from that person's still poses (replaces the
+  single `mano_shape.json`; `fit_batch.py --pack` takes `--shape`). Right-hand fitting (MANO_RIGHT) tested.
+- Protocol per person and hand (~10 min): 5 still poses (10 s), then 8 motion sessions (30 s): open/close,
+  finger counting, pinches, wrist rotation, grasping an object, free slow, free fast, near the edge of the views.
+- Capture warns when FPS < 85 (Control Panel open) and stops if the hand is out of one camera for long.
+
+**Exit:** ≥ 5 people × 2 hands recorded and fitted; per-person shape fit ≤ 3 mm; ~30,000 labelled frame pairs.
+
+## P5 — Baseline model (teammate, `train_kaggle.ipynb`)
+- Train on the Drive zips; split by person (and by session within a person); report the joint error (MPJPE) per
+  pose and speed. Also a single-camera variant (cam_A only): the version that works without the rig.
+- Compare with Ultraleap's own tracking against the same labels (9–13 mm with the offset removed today).
+
+**Exit:** validation joint error on unseen people below Ultraleap's error on the same frames.
+
+## P6 — Disk and data hygiene
+- Raw sessions are ~3 GB per minute. Keep raw only for sessions in `dataset.json`; delete failed / test
+  recordings and board sessions once their rig.json is saved; archive raw sessions off the laptop.
+
+**Exit:** the laptop keeps ≥ 50 GB free; every kept session is in `dataset.json`.
+
+Open phase-2 items (N0 +1 % size, N1 corner residual 2.7 mm, N4 mask IoU 0.86) are reopened only if P2 shows
+they limit the labels.
