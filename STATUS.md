@@ -598,8 +598,33 @@ Without the fist (46 frames): per-frame MANO < 10 mm in 16 frames (LeapC 8), 10�
 Along / across the finger (click minus MANO, mm): knuckle −2.8 / 7.7, middle joint +3.4 / 4.7, end joint +6.7 / 4.4,
 tip +6.1 / 3.7. The clicked end joints and tips lie ~6 mm beyond MANO's, and end joints are not affected by stereo
 edge smear: **MANO's fingers are ~6 mm too short**, so the cloud's overshoot past MANO's tips (4–9 mm, N7) is mostly
-real finger, and the board edge test's +5–8 mm does not carry over to fingertips. Next: a shape fit that matches finger
-length (clicked joints from both cameras, triangulated, or a fingertip term), and refit the mirrored-start sessions.
+real finger, and the board edge test's +5–8 mm does not carry over to fingertips.
+
+3D (`eval_clicks.py`, 24 moments clicked in both cameras, rays meeting within 15 mm): MANO vs triangulated clicks
+wrist 31.0, knuckle 11.9, middle joint 13.5, end joint 12.2, tip 13.2 mm (median). Knuckle-to-tip lengths, clicks vs
+MANO: index 90.9 / 81.9 (+8.9), middle 93.4 / 82.7 (+10.6), ring 88.9 / 79.4 (+9.7), little 73.4 / 64.2 (+9.8);
+thumb +26.5 (the clicked thumb base sits nearer the wrist than MANO's first thumb joint: definition).
+
+Why the fit keeps the fingers short — shape refits on the same 12 still frames, all ~2.56 mm to the cloud and all
+8–12 mm short of the clicks: trim 0.8 → 1.0, LeapC pull 0.02 → 0, both, both + 10× weaker shape prior. Not the
+weighting. MANO's shape space can reach the clicked lengths (betas within ±2.2 give index 89.8, middle 92.6, ring 89.4,
+same palm width), so the cloud simply does not demand longer fingers.
+
+**Open (2026-11-12): clicks vs ruler disagree.** The ruler (palm-side crease to tip: index 55, middle 63, ring 60,
+little 50 mm) plus a typical 20–25 mm from the knuckle centre to that crease gives ~77–88 mm, closer to MANO than to
+the clicks. Clicked knuckles may sit at different places in the two cameras (bump vs crease), stretching triangulated
+lengths. Decider: ruler on the back of the hand, fingers straight, knuckle centre to tip (skipped for now). If ~90 mm
+for the index: add a finger-length term to the shape fit; if ~80 mm: MANO is right and the clicks need a tighter
+definition.
+
+## N9 left hand refitted with the wrong-side LeapC fix (2026-11-13, Kaggle, `fit_inputs/n9_v2/`)
+
+Surface 2.36–2.65 mm (as before); MANO vs LeapC with offset removed 7.3–9.5 mm (before 7.6–13.5; wrist rotation
+12.4 → 7.5). Impossible palm/back switches (> 90° within 6 camera frames): free fast 0 (its one turn is over an
+18-frame gap), wrist rotation 4 (before 5) — 277 of its 524 frames have no usable LeapC start (cam_A lost the hand,
+cam_B called it "right"). Clicked joints, all frames: MANO 12.3 mm (before 13.1), tips 12.3 (13.4); LeapC 14.0.
+2026-11-11_232756 marked `exclude` in dataset.json until its switches are resolved (needs a start that does not come
+from LeapC, e.g. propagating from the neighbouring good frames).
 
 ## Capture requirement: keep the Ultraleap Control Panel closed (2026-10-27)
 

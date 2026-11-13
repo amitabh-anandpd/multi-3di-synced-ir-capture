@@ -141,9 +141,9 @@
    "rig_gap_mm": 1.72,
    "fit_frames": 479,
    "smoothing_sigma": 1,
-   "surface_mm": 2.3932249508773027,
-   "surface_p90_mm": 2.5792290062143635,
-   "vs_leapc_centred_mm": 7.6365601104437735,
+   "surface_mm": 2.3991257030058666,
+   "surface_p90_mm": 2.620183963351834,
+   "vs_leapc_centred_mm": 7.340174009545342,
    "drive_zip": "drive_upload\\2026-11-11_232548.zip",
    "drive_zip_mb": 141,
    "rig_overlap_pct": 88,
@@ -151,7 +151,7 @@
    "fused_every": 3,
    "fit_input": "fit_inputs\\2026-11-11_232548.npz",
    "palm_back_switches": 0,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json"
   },
   "2026-11-11_232631": {
    "person": "P01",
@@ -165,13 +165,13 @@
    "rig_gap_mm": 1.81,
    "fit_frames": 507,
    "smoothing_sigma": 1,
-   "surface_mm": 2.4709545503958283,
-   "surface_p90_mm": 2.912587975147673,
-   "vs_leapc_centred_mm": 9.610158166663979,
+   "surface_mm": 2.45687852104521,
+   "surface_p90_mm": 2.9272132764877394,
+   "vs_leapc_centred_mm": 9.469191152797608,
    "drive_zip": "drive_upload\\2026-11-11_232631.zip",
    "drive_zip_mb": 151,
    "palm_back_switches": 0,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json"
   },
   "2026-11-11_232713": {
    "person": "P01",
@@ -185,13 +185,13 @@
    "rig_gap_mm": 2.32,
    "fit_frames": 569,
    "smoothing_sigma": 1,
-   "surface_mm": 2.3780324695007877,
-   "surface_p90_mm": 2.6697343584648676,
-   "vs_leapc_centred_mm": 8.963096337908931,
+   "surface_mm": 2.355751513485376,
+   "surface_p90_mm": 2.711111759481553,
+   "vs_leapc_centred_mm": 9.178729116995308,
    "drive_zip": "drive_upload\\2026-11-11_232713.zip",
    "drive_zip_mb": 164,
    "palm_back_switches": 0,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json"
   },
   "2026-11-11_232756": {
    "person": "P01",
@@ -205,13 +205,14 @@
    "rig_gap_mm": 2.42,
    "fit_frames": 524,
    "smoothing_sigma": 1,
-   "surface_mm": 2.5817266685140687,
-   "surface_p90_mm": 3.2348471761027118,
-   "vs_leapc_centred_mm": 12.359663727501594,
+   "surface_mm": 2.6459914426497484,
+   "surface_p90_mm": 4.135460451576366,
+   "vs_leapc_centred_mm": 7.46760934167964,
    "drive_zip": "drive_upload\\2026-11-11_232756.zip",
    "drive_zip_mb": 156,
-   "palm_back_switches": 8,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "palm_back_switches": 6,
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json",
+   "exclude": "palm/back switches: 4 impossible orientation jumps remain after the wrong-side LeapC fix (277 of 524 frames have no usable LeapC start); clicked frames 25 mm off"
   },
   "2026-11-11_232838": {
    "person": "P01",
@@ -225,13 +226,13 @@
    "rig_gap_mm": 2.2,
    "fit_frames": 677,
    "smoothing_sigma": 1,
-   "surface_mm": 2.4306529073236938,
-   "surface_p90_mm": 2.800746767121306,
-   "vs_leapc_centred_mm": 11.415341256638868,
+   "surface_mm": 2.425931763229162,
+   "surface_p90_mm": 2.786241924136139,
+   "vs_leapc_centred_mm": 8.780358242099897,
    "drive_zip": "drive_upload\\2026-11-11_232838.zip",
    "drive_zip_mb": 201,
    "palm_back_switches": 0,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json"
   },
   "2026-11-11_232944": {
    "person": "P01",
@@ -245,13 +246,13 @@
    "rig_gap_mm": 2.67,
    "fit_frames": 824,
    "smoothing_sigma": 1,
-   "surface_mm": 2.471841079293562,
-   "surface_p90_mm": 3.0243588413660407,
-   "vs_leapc_centred_mm": 13.464650682731662,
+   "surface_mm": 2.473848809467305,
+   "surface_p90_mm": 3.123007267864315,
+   "vs_leapc_centred_mm": 9.049650127586043,
    "drive_zip": "drive_upload\\2026-11-11_232944.zip",
    "drive_zip_mb": 244,
    "palm_back_switches": 1,
-   "evaluation": "fit_inputs\\evaluation_20261112_0947.json"
+   "evaluation": "fit_inputs\\evaluation_20261113_2148.json"
   },
   "2026-11-12_103347": {
    "person": "P01",

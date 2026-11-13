@@ -94,3 +94,66 @@ for key in sorted({(r["session"], r["cam"]) for r in rows}):
 json.dump({"summary": summary, "frames": [{k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in r.items()}
                                           for r in rows]}, open(os.path.join(LABELS, "joints", "eval.json"), "w"))
 print(f"\nwrote {os.path.join(LABELS, 'joints', 'eval.json')}")
+
+# --- 3D: moments clicked in both cameras -> triangulated joints -> 3D error and finger lengths
+CHAIN = {"thumb": [13, 14, 15, 16], "index": [1, 2, 3, 17], "middle": [4, 5, 6, 18], "ring": [10, 11, 12, 19],
+         "little": [7, 8, 9, 20]}
+pairs = {}
+for f in glob.glob(os.path.join(LABELS, "joints", "*", "*", "*.json")):
+    c = json.load(open(f))
+    pairs.setdefault((c["session"], c["cam_A_frame"]), {})[c["cam"]] = c
+tri = []
+for (sess, fa), cc in sorted(pairs.items()):
+    if len(cc) < 2:
+        continue
+    s = os.path.join("sessions", sess)
+    ua_, ub_ = segs[(s, "cam_A")].unit, segs[(s, "cam_B")].unit
+    # cam_B's centre and its rays in cam_A's frame: to_camera is rigid, P_B = A P_A + c; read A, c off 4 points
+    base = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1.0]]) * 100
+    Bm = to_camera(base, s, "cam_B")
+    # P_B = A @ P_A + c  ->  P_A = A^T (P_B - c)
+    A = (Bm[1:] - Bm[0]).T / 100
+    cvec = Bm[0]
+    oB = A.T @ (-cvec)
+    z = np.load(os.path.join(s, "mano", "smoothed.npz"))
+    k = np.nonzero(z["frames"].astype(int) == fa)[0]
+    if not len(k):
+        continue
+    M = z["joints"][k[0]]
+    X = np.full((21, 3), np.nan)
+    for j in range(21):
+        pa, pb = cc["cam_A"]["uv"][j], cc["cam_B"]["uv"][j]
+        if pa is None or pb is None:
+            continue
+        da = np.array([(pa[0] - ua_.cx) / ua_.f, (pa[1] - ua_.cy) / ua_.f, 1.0])
+        db = A.T @ np.array([(pb[0] - ub_.cx) / ub_.f, (pb[1] - ub_.cy) / ub_.f, 1.0])
+        lam = np.linalg.lstsq(np.stack([da, -db], 1), oB, rcond=None)[0]
+        qa, qb = lam[0] * da, oB + lam[1] * db
+        if np.linalg.norm(qa - qb) < 15 and lam[0] > 0 and lam[1] > 0:  # the two rays nearly meet
+            X[j] = (qa + qb) / 2
+    tri.append({"session": sess, "frame": fa, "clicked": X, "mano": M})
+if tri:
+    print(f"\n3D: {len(tri)} moments clicked in both cameras (rays meeting within 15 mm)")
+    e3 = np.array([np.linalg.norm(t["clicked"] - t["mano"], axis=1) for t in tri])
+    for name, idx in TYPES.items():
+        v = e3[:, idx].ravel()
+        v = v[np.isfinite(v)]
+        if len(v):
+            print(f"  {name:<14} MANO vs triangulated clicks: median {np.median(v):5.1f} mm, p90 {np.percentile(v, 90):5.1f}  [{len(v)}]")
+    print("  finger length, knuckle (thumb: base) to tip, median over moments where all 4 joints were clicked:")
+    lengths = {}
+    for f_, ch in CHAIN.items():
+        lx, lm = [], []
+        for t in tri:
+            X, M = t["clicked"], t["mano"]
+            if np.isfinite(X[ch]).all():
+                lx.append(sum(np.linalg.norm(X[a] - X[b]) for a, b in zip(ch, ch[1:])))
+                lm.append(sum(np.linalg.norm(M[a] - M[b]) for a, b in zip(ch, ch[1:])))
+        if lx:
+            d = np.array(lx) - np.array(lm)
+            lengths[f_] = {"clicked_mm": float(np.median(lx)), "mano_mm": float(np.median(lm)),
+                           "diff_mm": float(np.median(d)), "moments": len(lx)}
+            print(f"    {f_:<7} clicked {np.median(lx):5.1f}  MANO {np.median(lm):5.1f}  difference {np.median(d):+5.1f} mm "
+                  f"(p25 {np.percentile(d, 25):+.1f}, p75 {np.percentile(d, 75):+.1f})  [{len(lx)}]")
+    json.dump({"moments": len(tri), "finger_lengths": lengths},
+              open(os.path.join(LABELS, "joints", "eval_3d.json"), "w"), indent=1)
