@@ -268,6 +268,8 @@ if __name__ == "__main__":
     ap.add_argument("--click-lengths", nargs=4, type=float, metavar=("INDEX", "MIDDLE", "RING", "PINKY"),
                     help="measured finger lengths (MCP to tip, mm) from click triangulation; adds a length term to the"
                          " shape fit (weight 0.02) so the shape reaches the measured lengths")
+    ap.add_argument("--thumb-mm", type=float, default=0.0,
+                    help="measured thumb length (CMC base to tip, mm); constrains full FINGERS['thumb'] chain [13,14,15,16]")
     ap.add_argument("--palm-mm", type=float, default=0.0,
                     help="measured index-MCP to little-MCP distance (mm, ruler); adds a palm-width term (weight 0.02)")
     args = ap.parse_args()
@@ -295,7 +297,8 @@ if __name__ == "__main__":
         # Optional third pass: measurement constraints (finger lengths + palm width).
         click_lengths = args.click_lengths  # [index, middle, ring, pinky] mm, or None
         palm_mm = args.palm_mm              # index-MCP to little-MCP mm, or 0 = skip
-        if click_lengths or palm_mm:
+        thumb_mm = args.thumb_mm   # thumb CMC-to-tip mm (full FINGERS["thumb"] chain), or 0 = skip
+        if click_lengths or palm_mm or thumb_mm:
             FINGER_KEYS = ["index", "middle", "ring", "pinky"]
             click_dict = dict(zip(FINGER_KEYS, click_lengths)) if click_lengths else {}
             rng_m = np.random.default_rng(42)
@@ -317,6 +320,11 @@ if __name__ == "__main__":
                     fl_t = {k: sum((j_m[0][a] - j_m[0][b]).norm()
                                    for a, b in zip(FINGERS[k], FINGERS[k][1:])) for k in click_dict}
                     loss_m = loss_m + 0.02 * sum((fl_t[k] - v_) ** 2 for k, v_ in click_dict.items()) / len(click_dict)
+                if thumb_mm:
+                    # full chain CMC(13)->MCP(14)->IP(15)->tip(16)
+                    t_len = sum((j_m[0][a] - j_m[0][b]).norm()
+                                for a, b in zip(FINGERS["thumb"], FINGERS["thumb"][1:]))
+                    loss_m = loss_m + 0.02 * (t_len - thumb_mm) ** 2
                 if palm_mm:
                     loss_m = loss_m + 0.02 * ((j_m[0][1] - j_m[0][7]).norm() - palm_mm) ** 2
                 loss_m.backward()
@@ -331,6 +339,8 @@ if __name__ == "__main__":
         measurements = {}
         if click_lengths:
             measurements["click_lengths_mm"] = dict(zip(["index", "middle", "ring", "pinky"], click_lengths))
+        if thumb_mm:
+            measurements["thumb_mm"] = thumb_mm
         if palm_mm:
             measurements["palm_mm"] = palm_mm
         json.dump({"person": args.person, "side": side, "betas": betas.detach().numpy().ravel().tolist(),
@@ -341,7 +351,7 @@ if __name__ == "__main__":
                   open(shape_file, "w"), indent=2)
         print(f"shape ({side} hand) from {len(frames)} frames in {time.time() - t0:.0f} s: point-to-mesh median "
               f"{np.median(d):.2f} mm per frame {np.round(d, 2).tolist()}")
-        print("MANO finger lengths, MCP (thumb CMC) to tip, mm:", {k: round(v, 1) for k, v in fl.items()})
+        print("MANO finger lengths, CMC (thumb) / MCP to tip, mm:", {k: round(v, 1) for k, v in fl.items()})
         print(f"palm width (index–little MCP): {palm_width_mm:.1f} mm")
         print("wrote", shape_file)
 
