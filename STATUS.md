@@ -696,3 +696,39 @@ Implemented as `--click-lengths INDEX MIDDLE RING PINKY` and `--palm-mm FLOAT` o
 - P01 right (103347/103432/103509/103540/103619): fit 2.46 mm; index 89.0, middle 93.8, ring 88.4, pinky 72.2; palm 69.9 mm
 
 All 23 sessions repacked (`fit_batch.py --pack`); Kaggle refit pending.
+
+## Full dataset refitted with corrected shapes (2026-11-15, Kaggle params (3).zip)
+
+23 sessions (N2 left × 7, N9 left × 5 + 232756 excluded, right × 11), surface median **2.42 mm** (min 2.11, max 3.36).
+
+| session | notes | surf mm | p90 | speed mm/s | jitter | LeapC centred |
+|---|---|---|---|---|---|---|
+| 035647 | N2 open still | 2.95 | 3.41 | 73 | 0.49 | 9.8 |
+| 035726 | N2 fist still | 2.46 | 2.60 | 60 | 0.37 | 4.9 |
+| 035752 | N2 pinch still | 2.55 | 2.67 | 60 | 0.31 | 3.1 |
+| 035809 | N2 spread still | 2.29 | 2.34 | 22 | 0.13 | 1.7 |
+| 035830 | N2 point still | 2.34 | 2.50 | 46 | 0.31 | 2.6 |
+| 035901 | N2 slow motion | 2.58 | 2.77 | 58 | 0.68 | 5.5 |
+| 035942 | N2 fast motion | 2.69 | 3.01 | 455 | 1.02 | 5.1 |
+| 232548 | N9 open close slow | 2.41 | 2.65 | 56 | 0.88 | 7.7 |
+| 232631 | N9 finger counting | 2.46 | 2.96 | 94 | 1.45 | 11.0 |
+| 232713 | N9 pinches | 2.36 | 2.76 | 113 | 1.49 | 10.1 |
+| 232756 | N9 wrist rotation (excluded) | 3.35 | 3.83 | 126 | 1.62 | 7.5 |
+| 232838 | N9 free slow | 2.39 | 2.87 | 211 | 1.50 | 9.6 |
+| 232944 | N9 free fast | 2.46 | 3.18 | 355 | 1.90 | 9.7 |
+| 103347 | right open still | 2.23 | 2.28 | 20 | 0.12 | 1.0 |
+| 103432 | right fist still | 2.39 | 2.82 | 81 | 0.54 | 10.5 |
+| 103509 | right pinch still | 2.44 | 2.55 | 50 | 0.33 | 3.2 |
+| 103540 | right spread still | 2.31 | 2.42 | 27 | 0.13 | 1.4 |
+| 103619 | right point still | 2.57 | 2.68 | 49 | 0.30 | 2.2 |
+| 103645 | right open close slow | 2.24 | 2.47 | 78 | 0.70 | 9.3 |
+| 103737 | right finger counting | 2.11 | 2.37 | 84 | 0.72 | 7.8 |
+| 103822 | right pinches | 2.33 | 2.76 | 147 | 1.37 | 10.2 |
+| 103904 | right wrist rotation | 3.36 | 4.44 | 217 | 1.93 | 16.7 |
+| 103949 | right free slow | 2.63 | 3.09 | 168 | 1.27 | 8.2 |
+| 104028 | right free fast | 2.19 | 2.52 | 300 | 1.21 | 7.5 |
+
+MANO vs LeapC centred by joint type (all sessions): wrist 4.3, knuckle 5.6, middle joint 7.4, end joint 8.7, tip 14.1 mm.
+Worst frame: 103904 right wrist rotation frame 17322 at 9.45 mm / 1296 mm/s.
+Wrist rotation sessions (232756 left excluded, 103904 right 3.36 mm) are the weakest: they put the hand edge-on and speed is high.
+Drive zips ready in drive_upload/ — upload to shared Drive sessions/ folder.
