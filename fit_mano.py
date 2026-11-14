@@ -265,6 +265,11 @@ if __name__ == "__main__":
     ap.add_argument("--max-frames", type=int, default=0)
     ap.add_argument("--ply-every", type=int, default=30)
     ap.add_argument("--post", type=float, help="smooth an existing fit over time with this sigma (frames) and report")
+    ap.add_argument("--click-lengths", nargs=4, type=float, metavar=("INDEX", "MIDDLE", "RING", "PINKY"),
+                    help="measured finger lengths (MCP to tip, mm) from click triangulation; adds a length term to the"
+                         " shape fit (weight 0.02) so the shape reaches the measured lengths")
+    ap.add_argument("--palm-mm", type=float, default=0.0,
+                    help="measured index-MCP to little-MCP distance (mm, ruler); adds a palm-width term (weight 0.02)")
     args = ap.parse_args()
 
     if args.shape:
@@ -287,16 +292,57 @@ if __name__ == "__main__":
         t0 = time.time()
         o, p, t = fit_frames(hand, betas, frames, leap_all, init, iters=150, opt_betas=True, lr=0.02)
         o, p, t = fit_frames(hand, betas.detach(), frames, leap_all, (o, p, t), iters=100)
+        # Optional third pass: measurement constraints (finger lengths + palm width).
+        click_lengths = args.click_lengths  # [index, middle, ring, pinky] mm, or None
+        palm_mm = args.palm_mm              # index-MCP to little-MCP mm, or 0 = skip
+        if click_lengths or palm_mm:
+            FINGER_KEYS = ["index", "middle", "ring", "pinky"]
+            click_dict = dict(zip(FINGER_KEYS, click_lengths)) if click_lengths else {}
+            rng_m = np.random.default_rng(42)
+            pts_m = [torch.as_tensor(sub(f[1], 1500, rng_m), dtype=torch.float32) for f in frames]
+            n = len(frames)
+            o_m = o.detach().clone().requires_grad_()
+            p_m = p.detach().clone().requires_grad_()
+            t_m = t.detach().clone().requires_grad_()
+            b_m = betas.detach().clone().requires_grad_()
+            opt_m = torch.optim.Adam([o_m, p_m, t_m, b_m], lr=0.02)
+            for _ in range(300):
+                opt_m.zero_grad()
+                v_m, _ = hand(b_m.expand(n, -1), o_m, p_m, t_m)
+                nv_m = vertex_normals(v_m, hand.faces)
+                loss_m = sum(data_loss(v_m[i], nv_m[i], pts_m[i]) for i in range(n)) / n
+                loss_m = loss_m + 0.5 * (p_m ** 2).mean() + 0.05 * (b_m ** 2).mean()
+                _, j_m = hand(b_m, torch.zeros(1, 3), torch.zeros(1, 45), torch.zeros(1, 3))
+                if click_dict:
+                    fl_t = {k: sum((j_m[0][a] - j_m[0][b]).norm()
+                                   for a, b in zip(FINGERS[k], FINGERS[k][1:])) for k in click_dict}
+                    loss_m = loss_m + 0.02 * sum((fl_t[k] - v_) ** 2 for k, v_ in click_dict.items()) / len(click_dict)
+                if palm_mm:
+                    loss_m = loss_m + 0.02 * ((j_m[0][1] - j_m[0][7]).norm() - palm_mm) ** 2
+                loss_m.backward()
+                opt_m.step()
+            o, p, t, betas = o_m.detach(), p_m.detach(), t_m.detach(), b_m.detach().unsqueeze(0) if b_m.dim() == 1 else b_m.detach()
+            betas = betas if betas.dim() == 2 else betas.unsqueeze(0)
         d = [point_to_mesh(hand, betas, o[i:i + 1], p[i:i + 1], t[i:i + 1], f[1]) for i, f in enumerate(frames)]
         _, j = hand(betas, o[:1], p[:1], t[:1])
         fl = finger_lengths(j[0].detach().numpy())
+        _, j_ref = hand(betas, torch.zeros(1, 3), torch.zeros(1, 45), torch.zeros(1, 3))
+        palm_width_mm = float((j_ref[0][1] - j_ref[0][7]).norm())
+        measurements = {}
+        if click_lengths:
+            measurements["click_lengths_mm"] = dict(zip(["index", "middle", "ring", "pinky"], click_lengths))
+        if palm_mm:
+            measurements["palm_mm"] = palm_mm
         json.dump({"person": args.person, "side": side, "betas": betas.detach().numpy().ravel().tolist(),
                    "sessions": args.shape,
                    "frames": [f[0] for f in frames], "point_to_mesh_median_mm": float(np.median(d)),
-                   "finger_lengths_mm": fl}, open(shape_file, "w"), indent=2)
+                   "finger_lengths_mm": fl, "palm_width_mm": palm_width_mm,
+                   **({"measurements": measurements} if measurements else {})},
+                  open(shape_file, "w"), indent=2)
         print(f"shape ({side} hand) from {len(frames)} frames in {time.time() - t0:.0f} s: point-to-mesh median "
               f"{np.median(d):.2f} mm per frame {np.round(d, 2).tolist()}")
         print("MANO finger lengths, MCP (thumb CMC) to tip, mm:", {k: round(v, 1) for k, v in fl.items()})
+        print(f"palm width (index–little MCP): {palm_width_mm:.1f} mm")
         print("wrote", shape_file)
 
     if args.session and args.post is not None:

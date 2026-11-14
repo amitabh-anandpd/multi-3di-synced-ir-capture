@@ -671,3 +671,28 @@ service did not help on its own. `capture_multi.py` now prints a warning if the 
   of a 12×12 grid so a local hand motion stands out.
 - 2026-10-27: M6 passed (5/5 events within one group). Added `tools/live_view.py` for aiming the
   cameras without the Control Panel.
+
+## P01 shape refit with finger-length and palm-width constraints (2026-11-14)
+
+Ruler measurements (back of hand, knuckle centre to tip): thumb 72, index 96, middle 105, ring 95, little 80 mm.
+Click triangulation (3D, MCP to tip): index 90.9, middle 93.4, ring 88.9, pinky 73.4 mm.
+Ruler runs ~5 mm longer (over the knuckle bump vs joint centre); clicks are the more conservative target.
+Palm (index MCP to little MCP): ruler 70 mm.
+
+Shape fit test on P01 left (12 still frames from 035726/035752/035809), varying finger and palm weights:
+| finger w | palm w | fit mm | index | middle | ring | pinky | palm |
+|---|---|---|---|---|---|---|---|
+| 0 | 0 | 2.52 | 85.3 | 85.6 | 83.0 | 62.6 | 63.2 |
+| 0.02 | 0 | 2.64 | 90.3 | 92.8 | 89.5 | 69.0 | 62.2 |
+| 0.02 | 0.02 | 2.58 | 90.1 | 91.4 | 89.3 | 69.9 | 69.0 |
+| 0.1 | 0.02 | 2.63 | 90.8 | 92.3 | 90.0 | 70.9 | 67.3 |
+
+Chosen: finger 0.02, palm 0.02 — cloud fit unchanged (~2.5 mm), lengths within 2 mm of clicks, palm 69 mm (ruler 70).
+Implemented as `--click-lengths INDEX MIDDLE RING PINKY` and `--palm-mm FLOAT` on `fit_mano.py --shape`
+(weights fixed at 0.02 each; targets stored in shapes/<person>_<side>.json under "measurements").
+
+**Refitted shapes (2026-11-14):**
+- P01 left (035726/035752/035809): fit 2.49 mm; index 88.9, middle 91.3, ring 87.5, pinky 73.3; palm 69.2 mm
+- P01 right (103347/103432/103509/103540/103619): fit 2.46 mm; index 89.0, middle 93.8, ring 88.4, pinky 72.2; palm 69.9 mm
+
+All 23 sessions repacked (`fit_batch.py --pack`); Kaggle refit pending.
