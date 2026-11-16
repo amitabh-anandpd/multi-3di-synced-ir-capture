@@ -48,6 +48,9 @@ python dataset.py                  # table of every session in the training set
 
 - New person or hand: record 5 still poses ("... still" in the notes) + motion, then
   `python process.py --latest 11 --person P02 --hand right` fits `shapes/P02_right.json` first.
+  After clicking joints (`tools/click_joints.py`) and running `tools/eval_clicks.py` to get the 3D finger lengths,
+  refit the shape with measurements: `python fit_mano.py --shape <still sessions> --person P02 --hand right`
+  `--click-lengths I M R P --thumb-mm T --palm-mm W` then repack and refit on Kaggle.
 - A hand held away from where the board was held can fail the rig check (2026-11-12 right hand: 5–7 mm with a good
   rig). `process.py --refine` lets fuse.py correct the rig from the hand points, kept only if it helps on held-out
   frames (right hand: 1.6–2.5 mm afterwards). Better: move the board through the whole hand space when calibrating.
@@ -66,7 +69,11 @@ python calib_unit.py --fit sessions/2026-11-06_011406 --test sessions/2026-11-05
 python calib_rig.py sessions/2026-11-06_033648 --check sessions/2026-11-06_033854
 
 python fuse.py sessions/2026-11-06_035942                               # -> <session>/fused/ (hands.npz, PLYs, playback.mp4)
-python fit_mano.py --shape sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809 --person P01
+python fit_mano.py --shape sessions/2026-11-06_035726 sessions/2026-11-06_035752 sessions/2026-11-06_035809 --person P01 \
+    --click-lengths 90.9 93.4 88.9 73.4 --thumb-mm 115 --palm-mm 70
+# --click-lengths INDEX MIDDLE RING PINKY (MCP to tip, mm, from tools/eval_clicks.py 3D triangulation)
+# --thumb-mm: CMC base to tip (ruler); --palm-mm: index-MCP to little-MCP (ruler)
+# Omit the measurement flags if you don't have ruler/click data yet; refit later when you do.
 python fit_mano.py sessions/2026-11-06_035942 --every 2                 # -> <session>/mano/params.npz (CPU, ~1 s/frame)
 python fit_batch.py --pack sessions/2026-11-11_232548                   # faster: pack -> fit on Kaggle GPU (fit_kaggle.ipynb)
 python fit_batch.py --unpack fit_inputs                                 #   -> <session>/mano/params.npz from Kaggle's params.zip

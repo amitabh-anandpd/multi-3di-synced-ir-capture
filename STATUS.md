@@ -732,3 +732,16 @@ MANO vs LeapC centred by joint type (all sessions): wrist 4.3, knuckle 5.6, midd
 Worst frame: 103904 right wrist rotation frame 17322 at 9.45 mm / 1296 mm/s.
 Wrist rotation sessions (232756 left excluded, 103904 right 3.36 mm) are the weakest: they put the hand edge-on and speed is high.
 Drive zips ready in drive_upload/ — upload to shared Drive sessions/ folder.
+
+## Full dataset refitted with thumb constraint (2026-11-15, Kaggle params (4).zip)
+
+Ruler: thumb CMC-to-tip ~115 mm (MANO was 94 mm → now 110–112 mm). Added --thumb-mm to fit_mano.py --shape.
+23 sessions, surface median **2.42 mm** (range 2.13–3.80 mm; wrist-rotation sessions still worst).
+
+Speed bands: 0–50 mm/s 2.33 mm; 50–150 mm/s 2.43 mm; 150–400 mm/s 2.58 mm; 400+ mm/s 2.71 mm.
+MANO vs LeapC centred by joint: wrist 4.5, knuckle 5.8, middle 7.6, end 8.8, tip 15.1 mm.
+Worst frame: N9 free fast 232944 at 8.01 mm / 229 mm/s.
+
+Palm/back switches: 232756 left wrist rotation 8 switches (excluded); 232944 N9 free fast 2; 103904 right wrist rotation 11.
+103904 right wrist rotation: 3.33 mm surface, 11 switches, worst frame 7.68 mm — not yet excluded but weakest session.
+Drive zips rebuilt (24 × 65–437 MB) in drive_upload/ — not yet uploaded.
