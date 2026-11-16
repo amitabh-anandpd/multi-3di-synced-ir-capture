@@ -283,3 +283,17 @@ every session.
 
 Open phase-2 items (N0 +1 % size, N1 corner residual 2.7 mm, N4 mask IoU 0.86) are reopened only if P2 shows
 they limit the labels.
+
+## Phase 3 status (2026-11-17)
+
+- P0: the repair stays off. Instead the propagation shifts now reach ±128 frames (fit_batch.py SHIFTS); the two excluded
+  wrist-rotation sessions (232756 left, 103904 right) are packed for a Kaggle test. Exit (worst frame ≤ 5 mm, switches
+  gone) not yet checked.
+- P1: rig_check, per-session rigs and `process.py --refine` done. A rigid camera base is still open.
+- P2: done. 99 clicked frames, both hands: MANO 10.9 mm vs LeapC 14.2 mm (median, all joints); finger lengths within
+  3.5 mm of the clicks except the thumb (-7.9 mm). Fingertips are not corrected (edge inflation +5–8 mm tested, not applied).
+- P3: done (process.py, finish.py, dataset.py).
+- P4: 1 person, both hands, 22 active sessions, ~12,000 labelled frames. Open: 4 more people. Shapes are fitted with
+  `fit_mano.py --shape ... --click-lengths I M R P --thumb-mm T --palm-mm W` once the person's clicks and ruler numbers exist.
+- P5: teammate. Needs the 24 zips in drive_upload/ on the shared Drive.
+- P6: 46 GB of unreferenced raw sessions deleted; 44 session folders remain.
