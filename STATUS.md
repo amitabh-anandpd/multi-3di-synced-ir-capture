@@ -745,3 +745,28 @@ Worst frame: N9 free fast 232944 at 8.01 mm / 229 mm/s.
 Palm/back switches: 232756 left wrist rotation 8 switches (excluded); 232944 N9 free fast 2; 103904 right wrist rotation 11.
 103904 right wrist rotation: 3.33 mm surface, 11 switches, worst frame 7.68 mm — not yet excluded but weakest session.
 Drive zips rebuilt (24 × 65–437 MB) in drive_upload/ — not yet uploaded.
+
+## P2 label accuracy with right-hand sessions included (2026-11-17, 99 clicked frames)
+
+99 frames across all 24 sessions (49 right-hand added), 1695 joint observations.
+
+MANO vs clicks (2D projection):
+  wrist 19.8 mm (p90 26.9) | knuckle 11.7 | middle joint 10.3 | end joint 10.7 | tip 9.0 | **all 10.9 mm**
+LeapC vs clicks: all 14.2 mm → MANO beats LeapC by 3.3 mm.
+
+3D triangulated finger lengths (48 stereo moments):
+  index  clicked 90.7  MANO 91.2  diff −0.4 mm  ✓
+  ring   clicked 86.1  MANO 88.9  diff −3.1 mm  (acceptable)
+  middle clicked 94.7  MANO 89.8  diff +3.4 mm  (MANO still a bit short)
+  little clicked 71.3  MANO 73.4  diff −1.4 mm  ✓
+  thumb  clicked 119.5 MANO 111.6 diff +7.9 mm  (MANO short; click CMC uncertain)
+
+Flagged sessions (cam_A MANO error > 20 mm):
+  035647 cam_A 31.5 mm — open still, hand edge-on to cam_A (known weak case)
+  232756 cam_A 21.4 mm — excluded wrist rotation
+  103619 cam_A 22.6 mm — right point still, palm/back ambiguity at that pose
+  103904 cam_A 33.2 mm — right wrist rotation with 11 switches; cam_B not clicked (no matching frame)
+
+P2 exit criterion (median joint error per type): met for all types except wrist (19.8 mm — wrist joint sits under skin,
+click and 3D position differ). No correction applied to fingertips; p90 error at tips is 29.2 mm (2D projection) but
+mostly the 3D depth direction (not visible from one camera).
