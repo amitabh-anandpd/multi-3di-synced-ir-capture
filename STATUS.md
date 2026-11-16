@@ -778,3 +778,13 @@ Deleted 75 raw sessions not in dataset.json and not referenced by any doc or scr
 docs or scripts still reference (calib_unit / calib_rig / merge_check / paper_edge inputs, HANDOFF re-fuse rigs).
 Their rig.json files are kept in each session folder that needs one.
 The shape and dataset files were not touched.
+
+## Wrist-rotation refit with ±128 propagation shifts (2026-11-17, Kaggle params (5).zip)
+
+232756 (left): switches 8 → 4, surface 3.80 → 2.58 mm. 103904 (right): switches 11 → 11, surface 3.33 → 3.30 mm (all 826
+frames have a LeapC start, so LeapC itself flips; longer shifts do not help).
+Clicked frames (eval_clicks) unchanged: 232756 cam_A 21.4 mm (LeapC 12.8), 103904 cam_A 33.0 mm (LeapC 19.5). The labels
+on these frames are wrong, not just switched, so both sessions stay `exclude` in dataset.json.
+`finish.py` now skips excluded sessions when packing for the Drive (before, it packed them; the two zips were deleted).
+The ±128 shifts stay (harmless; better surface for 232756). Open: an orientation start that does not come from LeapC
+(e.g. the clicked frames as anchors), or re-record wrist rotation slower with the palm facing between the cameras.

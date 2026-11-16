@@ -286,7 +286,7 @@ they limit the labels.
 
 ## Phase 3 status (2026-11-17)
 
-- P0: the repair stays off. Instead the propagation shifts now reach ±128 frames (fit_batch.py SHIFTS); the two excluded
+- P0: the repair stays off. Propagation shifts now reach ±128 frames (fit_batch.py SHIFTS); tested 2026-11-17: 232756 8→4 switches, 103904 unchanged; the two excluded
   wrist-rotation sessions (232756 left, 103904 right) are packed for a Kaggle test. Exit (worst frame ≤ 5 mm, switches
   gone) not yet checked.
 - P1: rig_check, per-session rigs and `process.py --refine` done. A rigid camera base is still open.

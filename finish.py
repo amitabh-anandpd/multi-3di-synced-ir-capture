@@ -73,9 +73,15 @@ if sessions:
             r = e.get(dataset.name_of(s)[-6:], {})
             dataset.update(s, surface_mm=r.get("point_to_mesh_mm"), surface_p90_mm=r.get("point_to_mesh_p90_mm"),
                            vs_leapc_centred_mm=r.get("vs_leapc_centred_mm"), evaluation=ev)
-    out = subprocess.run([sys.executable, "tools/pack_drive.py", *sessions], capture_output=True, text=True)
-    print(out.stdout + (out.stderr[-1500:] if out.returncode else ""))
-    for s in sessions:
+    rows = dataset.load()["sessions"]
+    skipped = [s for s in sessions if rows.get(dataset.name_of(s), {}).get("exclude")]
+    for s in skipped:
+        print(f"not packed for the Drive (excluded in dataset.json): {dataset.name_of(s)}")
+    packable = [s for s in sessions if s not in skipped]
+    out = subprocess.run([sys.executable, "tools/pack_drive.py", *packable], capture_output=True, text=True) if packable         else None
+    if out:
+        print(out.stdout + (out.stderr[-1500:] if out.returncode else ""))
+    for s in packable:
         p = os.path.join("drive_upload", f"{dataset.name_of(s)}.zip")
         if os.path.exists(p):
             dataset.update(s, drive_zip=p, drive_zip_mb=round(os.path.getsize(p) / 1e6))
