@@ -29,7 +29,7 @@ import torch
 from fit_mano import Hand
 
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
-SHIFTS = [1, -1, 2, -2, 4, -4, 8, -8, 16, -16, 1, -1]
+SHIFTS = [1, -1, 2, -2, 4, -4, 8, -8, 16, -16, 32, -32, 64, -64, 128, -128, 1, -1]
 
 
 def pack(session, out_dir, every=1, npts=1500, min_pts=500, seed=0):
@@ -239,7 +239,7 @@ def repair_file(path):
     print(f"{path}: {msg} ({time.time() - t0:.0f} s) -> {out}", flush=True)
 
 
-def fit(path, iters=200, chunk=256, lr=0.02, passes=12, pass_iters=40, first=None, fix=False):
+def fit(path, iters=200, chunk=256, lr=0.02, passes=18, pass_iters=40, first=None, fix=False):
     z = np.load(path)
     setup = load_setup(z, first)
     hand, betas, faces, pts, lj, has = setup
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     ap.add_argument("--every", type=int, default=1, help="--pack: every Nth fused frame")
     ap.add_argument("--iters", type=int, default=200)
     ap.add_argument("--chunk", type=int, default=256, help="frames optimised together")
-    ap.add_argument("--passes", type=int, default=12, help="propagation passes (0 = none)")
+    ap.add_argument("--passes", type=int, default=18, help="propagation passes (0 = none); SHIFTS has 18 entries up to ±128")
     ap.add_argument("--range", type=int, nargs=2, help="--fit only frames [a, b) of the packed list (testing)")
     args = ap.parse_args()
     if args.pack:

@@ -770,3 +770,11 @@ Flagged sessions (cam_A MANO error > 20 mm):
 P2 exit criterion (median joint error per type): met for all types except wrist (19.8 mm — wrist joint sits under skin,
 click and 3D position differ). No correction applied to fingertips; p90 error at tips is 29.2 mm (2D projection) but
 mostly the 3D depth direction (not visible from one camera).
+
+## P6 disk cleanup (2026-11-17)
+
+Deleted 75 raw sessions not in dataset.json and not referenced by any doc or script (Oct 26 – Nov 12 test and failed runs):
+46 GB freed. 44 session folders remain: the 22 active dataset sessions, the board sessions, and the 15 sessions that
+docs or scripts still reference (calib_unit / calib_rig / merge_check / paper_edge inputs, HANDOFF re-fuse rigs).
+Their rig.json files are kept in each session folder that needs one.
+The shape and dataset files were not touched.
