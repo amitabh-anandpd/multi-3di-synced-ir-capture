@@ -1,0 +1,72 @@
+== 2026-11-18_231629  'P02 right open still'
+   groups kept: 742 of 794 reference frames (93.5 %);  fps cam_A 79.5, cam_B 79.7   (below 85: Ultraleap Control Panel open?)
+   fused 248 frames (every 3), 46700 points/frame; rig check: gap 2.57 mm, overlap 87 % -> OK
+== 2026-11-18_231702  'P02 right fist still'
+   groups kept: 687 of 778 reference frames (88.3 %);  fps cam_A 77.7, cam_B 76.5   (below 85: Ultraleap Control Panel open?)
+   fused 229 frames (every 3), 23987 points/frame; rig check: gap 2.06 mm, overlap 88 % -> OK
+== 2026-11-18_232011  'P02 right pinch still'
+   groups kept: 804 of 854 reference frames (94.1 %);  fps cam_A 85.3, cam_B 84.0   (below 85: Ultraleap Control Panel open?)
+   fused 268 frames (every 3), 17722 points/frame; rig check: gap 5.01 mm, overlap 68 % -> FAILED
+   NOT packed: the cameras' clouds disagree by 5.01 mm (> 3.0). If the cameras moved, record a board session and run calib_rig.py on it, then process.py again.
+== 2026-11-18_232040  'P02 right spread still'
+   groups kept: 716 of 778 reference frames (92.0 %);  fps cam_A 77.7, cam_B 77.3   (below 85: Ultraleap Control Panel open?)
+   fused 239 frames (every 3), 46249 points/frame; rig check: gap 2.55 mm, overlap 89 % -> OK
+== 2026-11-18_232110  'P02 right point still'
+   groups kept: 1127 of 1222 reference frames (92.2 %);  fps cam_A 81.4, cam_B 80.4   (below 85: Ultraleap Control Panel open?)
+   fused 376 frames (every 3), 27657 points/frame; rig check: gap 2.15 mm, overlap 76 % -> OK
+== 2026-11-18_232235  'P02 right open close slow'
+   groups kept: 2418 of 2565 reference frames (94.3 %);  fps cam_A 85.4, cam_B 85.2
+   fused 806 frames (every 3), 32867 points/frame; rig check: gap 2.46 mm, overlap 87 % -> OK
+== 2026-11-18_232323  'P02 right finger counting'
+   groups kept: 2288 of 2473 reference frames (92.5 %);  fps cam_A 82.4, cam_B 82.1   (below 85: Ultraleap Control Panel open?)
+   fused 763 frames (every 3), 36712 points/frame; rig check: gap 2.92 mm, overlap 94 % -> OK
+== 2026-11-18_232413  'P02 right pinches each finger'
+   groups kept: 2257 of 2440 reference frames (92.5 %);  fps cam_A 81.3, cam_B 81.7   (below 85: Ultraleap Control Panel open?)
+   fused 753 frames (every 3), 32933 points/frame; rig check: gap 3.06 mm, overlap 91 % -> FAILED
+   NOT packed: the cameras' clouds disagree by 3.06 mm (> 3.0). If the cameras moved, record a board session and run calib_rig.py on it, then process.py again.
+== 2026-11-18_232512  'P02 right wrist rotation'
+   groups kept: 2312 of 2478 reference frames (93.3 %);  fps cam_A 82.5, cam_B 81.8   (below 85: Ultraleap Control Panel open?)
+   fused 771 frames (every 3), 21159 points/frame; rig check: gap 2.45 mm, overlap 84 % -> OK
+== 2026-11-18_232605  'P02 right grasping object'
+   groups kept: 2476 of 2599 reference frames (95.3 %);  fps cam_A 86.6, cam_B 86.4
+   fused 826 frames (every 3), 6546 points/frame; rig check: gap 2.81 mm, overlap 56 % -> OK
+== 2026-11-18_232701  'P02 right free slow'
+   groups kept: 2197 of 2411 reference frames (91.1 %);  fps cam_A 80.4, cam_B 80.2   (below 85: Ultraleap Control Panel open?)
+   fused 733 frames (every 3), 38137 points/frame; rig check: gap 2.79 mm, overlap 87 % -> OK
+== 2026-11-18_232747  'P02 right free fast'
+   groups kept: 2493 of 2604 reference frames (95.7 %);  fps cam_A 86.8, cam_B 86.7
+   fused 1247 frames (every 2), 33500 points/frame; rig check: gap 2.64 mm, overlap 90 % -> OK
+== 2026-11-18_232832  'P02 right edge of view'
+   groups kept: 2281 of 2463 reference frames (92.6 %);  fps cam_A 82.1, cam_B 81.3   (below 85: Ultraleap Control Panel open?)
+   fused 761 frames (every 3), 15434 points/frame; rig check: gap 3.0 mm, overlap 73 % -> OK
+
+no shapes\P02_right.json yet: fitting P02's right hand shape from 4 still sessions
+shape (right hand) from 12 frames in 20 s: point-to-mesh median 2.23 mm per frame [2.16, 2.21, 2.22, 2.3, 2.2, 2.19, 2.34, 2.3, 2.28, 2.24, 2.3, 2.15]
+MANO finger lengths, CMC (thumb) / MCP to tip, mm: {'thumb': 93.0, 'index': 80.3, 'middle': 81.9, 'ring': 78.6, 'pinky': 64.2}
+wrote shapes\P02_right.json
+   sessions/2026-11-18_231629: 248 frames (248 with LeapC joints) -> fit_inputs\2026-11-18_231629.npz (4 MB)
+   done in 44.4 min
+   sessions/2026-11-18_231702: 227 frames (227 with LeapC joints) -> fit_inputs\2026-11-18_231702.npz (4 MB)
+   done in 42.2 min
+   sessions/2026-11-18_232040: 239 frames (239 with LeapC joints) -> fit_inputs\2026-11-18_232040.npz (4 MB)
+   done in 39.9 min
+   sessions/2026-11-18_232110: 375 frames (375 with LeapC joints) -> fit_inputs\2026-11-18_232110.npz (6 MB)
+   done in 38.0 min
+   sessions/2026-11-18_232235: 773 frames (773 with LeapC joints) -> fit_inputs\2026-11-18_232235.npz (12 MB)
+   done in 36.2 min
+   sessions/2026-11-18_232323: 763 frames (763 with LeapC joints) -> fit_inputs\2026-11-18_232323.npz (12 MB)
+   done in 31.3 min
+   sessions/2026-11-18_232512: 761 frames (761 with LeapC joints) -> fit_inputs\2026-11-18_232512.npz (12 MB)
+   done in 21.1 min
+   sessions/2026-11-18_232605: 167 frames (71 with LeapC joints) -> fit_inputs\2026-11-18_232605.npz (2 MB)
+   done in 18.2 min
+   sessions/2026-11-18_232701: 686 frames (670 with LeapC joints) -> fit_inputs\2026-11-18_232701.npz (11 MB)
+   done in 17.2 min
+   sessions/2026-11-18_232747: 1246 frames (1246 with LeapC joints) -> fit_inputs\2026-11-18_232747.npz (19 MB)
+   done in 12.4 min
+   sessions/2026-11-18_232832: 602 frames (583 with LeapC joints) -> fit_inputs\2026-11-18_232832.npz (8 MB)
+   done in 4.8 min
+
+packed 11: ['2026-11-18_231629', '2026-11-18_231702', '2026-11-18_232040', '2026-11-18_232110', '2026-11-18_232235', '2026-11-18_232323', '2026-11-18_232512', '2026-11-18_232605', '2026-11-18_232701', '2026-11-18_232747', '2026-11-18_232832']
+NOT packed 2: ['2026-11-18_232011', '2026-11-18_232413']
+next: upload these fit_inputs/<session>.npz files as a Kaggle dataset, run fit_kaggle.ipynb, download params.zip into fit_inputs/, then: python finish.py

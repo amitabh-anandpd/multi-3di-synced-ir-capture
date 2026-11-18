@@ -540,6 +540,425 @@
    "evaluation": "fit_inputs\\evaluation_20261115_1250.json",
    "drive_zip": "drive_upload\\2026-11-12_104028.zip",
    "drive_zip_mb": 361
+  },
+  "2026-11-18_225543": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left open still",
+   "fps": {
+    "cam_A": 89.0,
+    "cam_B": 88.9
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 1.58,
+   "rig_overlap_pct": 99,
+   "fused_frames": 289,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_225543.npz"
+  },
+  "2026-11-18_225905": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left fist still",
+   "fps": {
+    "cam_A": 86.2,
+    "cam_B": 86.1
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.63,
+   "rig_overlap_pct": 99,
+   "fused_frames": 272,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_225905.npz"
+  },
+  "2026-11-18_225942": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left pinch still",
+   "fps": {
+    "cam_A": 88.2,
+    "cam_B": 88.0
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.93,
+   "rig_overlap_pct": 88,
+   "fused_frames": 282,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_225942.npz"
+  },
+  "2026-11-18_230057": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left spread still",
+   "fps": {
+    "cam_A": 88.2,
+    "cam_B": 88.2
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.08,
+   "rig_overlap_pct": 99,
+   "fused_frames": 282,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_230057.npz"
+  },
+  "2026-11-18_230240": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left open close slow",
+   "fps": {
+    "cam_A": 86.0,
+    "cam_B": 86.0
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.13,
+   "rig_overlap_pct": 89,
+   "fused_frames": 737,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_230240.npz"
+  },
+  "2026-11-18_230412": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left finger counting",
+   "fps": {
+    "cam_A": 87.4,
+    "cam_B": 87.5
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.07,
+   "rig_overlap_pct": 83,
+   "fused_frames": 815,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_230412.npz"
+  },
+  "2026-11-18_230522": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left pinches each finger",
+   "fps": {
+    "cam_A": 84.0,
+    "cam_B": 84.2
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.71,
+   "rig_overlap_pct": 87,
+   "fused_frames": 798,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_230522.npz"
+  },
+  "2026-11-18_230917": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left wrist rotation",
+   "fps": {
+    "cam_A": 84.6,
+    "cam_B": 84.4
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.44,
+   "rig_overlap_pct": 73,
+   "fused_frames": 794,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_230917.npz",
+   "exclude": "no usable LeapC tracking: neither camera labelled the hand left (0 of 2538); packed npz has has_leap all False. Re-record."
+  },
+  "2026-11-18_231045": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left grasping object",
+   "fps": {
+    "cam_A": 84.9,
+    "cam_B": 84.8
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 3.52,
+   "rig_overlap_pct": 57,
+   "fused_frames": 793,
+   "fused_every": 3,
+   "rig_refined": false,
+   "exclude": "no usable LeapC tracking (0 of 2549) and rig gap 3.52 mm (held object seen by one camera only). Re-record."
+  },
+  "2026-11-18_231151": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left free slow",
+   "fps": {
+    "cam_A": 87.5,
+    "cam_B": 87.6
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.55,
+   "rig_overlap_pct": 88,
+   "fused_frames": 843,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231151.npz"
+  },
+  "2026-11-18_231235": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left free fast",
+   "fps": {
+    "cam_A": 80.5,
+    "cam_B": 80.6
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 3.02,
+   "rig_overlap_pct": 82,
+   "fused_frames": 1121,
+   "fused_every": 2,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231235.npz",
+   "rig_gap_note": "3.02 mm vs 3.0 threshold; neighbouring sessions 2.1-2.9, packed deliberately"
+  },
+  "2026-11-18_231331": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left edge of view",
+   "fps": {
+    "cam_A": 82.5,
+    "cam_B": 82.6
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.23,
+   "rig_overlap_pct": 62,
+   "fused_frames": 764,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231331.npz"
+  },
+  "2026-11-18_231533": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left point still",
+   "fps": {
+    "cam_A": 84.4,
+    "cam_B": 84.9
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.52,
+   "rig_overlap_pct": 76,
+   "fused_frames": 403,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231533.npz"
+  },
+  "2026-11-18_231629": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right open still",
+   "fps": {
+    "cam_A": 79.5,
+    "cam_B": 79.7
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.57,
+   "rig_overlap_pct": 87,
+   "fused_frames": 248,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231629.npz"
+  },
+  "2026-11-18_231702": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right fist still",
+   "fps": {
+    "cam_A": 77.7,
+    "cam_B": 76.5
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.06,
+   "rig_overlap_pct": 88,
+   "fused_frames": 229,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_231702.npz"
+  },
+  "2026-11-18_232011": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right pinch still",
+   "fps": {
+    "cam_A": 85.3,
+    "cam_B": 84.0
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 5.01,
+   "rig_overlap_pct": 68,
+   "fused_frames": 268,
+   "fused_every": 3,
+   "rig_refined": false,
+   "exclude": "rig gap 5.01 mm, overlap 68%, 17.7k points/frame vs ~46k for neighbouring stills (pinch self-occludes); not packed."
+  },
+  "2026-11-18_232040": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right spread still",
+   "fps": {
+    "cam_A": 77.7,
+    "cam_B": 77.3
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.55,
+   "rig_overlap_pct": 89,
+   "fused_frames": 239,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232040.npz"
+  },
+  "2026-11-18_232110": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right point still",
+   "fps": {
+    "cam_A": 81.4,
+    "cam_B": 80.4
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.15,
+   "rig_overlap_pct": 76,
+   "fused_frames": 376,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232110.npz"
+  },
+  "2026-11-18_232235": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right open close slow",
+   "fps": {
+    "cam_A": 85.4,
+    "cam_B": 85.2
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.46,
+   "rig_overlap_pct": 87,
+   "fused_frames": 806,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232235.npz"
+  },
+  "2026-11-18_232323": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right finger counting",
+   "fps": {
+    "cam_A": 82.4,
+    "cam_B": 82.1
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.92,
+   "rig_overlap_pct": 94,
+   "fused_frames": 763,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232323.npz"
+  },
+  "2026-11-18_232413": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right pinches each finger",
+   "fps": {
+    "cam_A": 81.3,
+    "cam_B": 81.7
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 3.06,
+   "rig_overlap_pct": 91,
+   "fused_frames": 753,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232413.npz",
+   "rig_gap_note": "3.06 mm vs 3.0 threshold; neighbouring sessions 2.1-2.9, packed deliberately"
+  },
+  "2026-11-18_232512": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right wrist rotation",
+   "fps": {
+    "cam_A": 82.5,
+    "cam_B": 81.8
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.45,
+   "rig_overlap_pct": 84,
+   "fused_frames": 771,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232512.npz"
+  },
+  "2026-11-18_232605": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right grasping object",
+   "fps": {
+    "cam_A": 86.6,
+    "cam_B": 86.4
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.81,
+   "rig_overlap_pct": 56,
+   "fused_frames": 826,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232605.npz"
+  },
+  "2026-11-18_232701": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right free slow",
+   "fps": {
+    "cam_A": 80.4,
+    "cam_B": 80.2
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.79,
+   "rig_overlap_pct": 87,
+   "fused_frames": 733,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232701.npz"
+  },
+  "2026-11-18_232747": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right free fast",
+   "fps": {
+    "cam_A": 86.8,
+    "cam_B": 86.7
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 2.64,
+   "rig_overlap_pct": 90,
+   "fused_frames": 1247,
+   "fused_every": 2,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232747.npz"
+  },
+  "2026-11-18_232832": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right edge of view",
+   "fps": {
+    "cam_A": 82.1,
+    "cam_B": 81.3
+   },
+   "rig_board": "sessions/2026-11-18_223925",
+   "rig_gap_mm": 3.0,
+   "rig_overlap_pct": 73,
+   "fused_frames": 761,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-18_232832.npz"
   }
  }
 }
