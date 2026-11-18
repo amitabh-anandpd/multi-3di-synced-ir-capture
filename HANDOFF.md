@@ -1,14 +1,17 @@
-# Handoff (2026-11-07)
+# Handoff (updated 2026-11-18)
 
 Two Ultraleap 3Di cameras record synced IR stereo. From that, the pipeline builds a fused 3D hand point cloud per
-frame and fits MANO to it. Phase 1 (capture and sync, M0–M8) and phase 2 (hand reconstruction, N0–N8) are both done.
+frame and fits MANO to it. Phase 1 (capture and sync, M0–M8) and phase 2 (hand reconstruction, N0–N8) are both done;
+phase 3 (the training dataset, P0–P6) has its tooling and accuracy work done and needs more people recorded.
 PLAN.md has the plan and exit criteria. STATUS.md has every measured result; read the N0–N8 sections first.
+`dataset.json` lists every session in the dataset — use it for training splits instead of scanning folders.
 
 ## Not in git: get these from Sangameshwar
 
 | Folder / file | What it is | If you can't get it |
 |---|---|---|
-| `sessions/` | All recordings (~3 GB per minute). Needed: boards `2026-11-06_011406`, `2026-11-11_184155`; hands `2026-11-06_035647` … `035942` (7 sessions, old rig `2026-11-06_033648`), `2026-11-11_184301` (current rig) | Record new ones (below) |
+| `sessions/` | All recordings (~3 GB per minute). The 22 dataset sessions are the keys of `dataset.json`; each keeps the rig it was fused with in `<session>/rig.json`. Boards: `2026-11-06_011406`, `2026-11-11_184155`, `2026-11-11_230458` (the current rig), `2026-11-12_134335` | Record new ones (below) |
+| `drive_upload/*.zip` | The packed dataset, 22 zips / 3.6 GB — this is what `train_kaggle.ipynb` reads from the shared Drive's `sessions/` folder | `python finish.py` after a Kaggle fit |
 | `units/*_dense_800_1.5_256.npz` | Dense rectification maps for the two cameras | `python tools/dense_map.py` with both cameras plugged in |
 | `mano/` | MANO model. **Licence: register at mano.is.tue.mpg.de yourself; never commit or share these files** | Download `MANO_LEFT.pkl` / `MANO_RIGHT.pkl` into `mano/`, then `python tools/convert_mano.py` |
 | `labels/` | 42 hand-painted masks for the N4 check (192 KB) | `python tools/label_hands.py` |
@@ -97,24 +100,35 @@ Main modules: `leapc.py` (LeapC ctypes bindings, images and tracking), `session_
 
 ## Where it stands (details in STATUS.md)
 
-- MANO surface vs fused cloud: 2.4–2.7 mm still, 2.7 mm slow, 3.1 mm fast motion (target 5 mm). Jitter after
-  smoothing: 0.1–0.25 still, 1.7 mm/frame² fast.
+- Dataset: 22 sessions, 12,428 labelled frame pairs, one person (P01) both hands, 3.6 GB of zips in
+  `drive_upload/`. Two wrist-rotation sessions (2026-11-11_232756, 2026-11-12_103904) are `exclude` in
+  dataset.json and are not packed.
+- MANO surface vs fused cloud: 2.45 mm median over the 22 sessions (2.1 mm still, 2.7 mm at 400+ mm/s;
+  target 5 mm). Jitter after smoothing: 0.1–0.25 still, up to 2.2 mm/frame² fast.
+- Label accuracy against 99 hand-clicked frames: MANO 10.9 mm median vs LeapC's 14.2 mm on the same joints.
+  Finger lengths match the clicked lengths within 3.5 mm except the thumb (7.9 mm short).
 - Exit criteria not fully met:
   - N0: per-camera size is off by about +1 %.
   - N1: rig residual 2.64 mm (target 2) and gap 4.8 mm (target 3); a 5.7° plane mismatch outside the board's volume.
   - N2: 79–87.5 FPS (target 88).
   - N4: mask IoU 0.86 strict (target 0.9).
+  - P4: 1 person of the 5 wanted.
 - Weakest cases:
+  - Wrist rotation: the hand goes edge-on and the fit swaps palm and back (11 switches in 103904). Both wrist
+    rotation sessions are excluded for this reason.
   - Open hand, still: cam_A sees it edge-on, p90 3.28 mm, 16 mm from LeapC.
-  - Fist: 9 mm from LeapC.
-  - Fast motion: worst frames 4–5 mm.
-  - MANO vs LeapC grows with hand speed (4 → 10–12 mm). This is not a time lag.
+  - Fast motion: worst frames 4–5 mm. MANO vs LeapC grows with hand speed (4 → 10–12 mm); this is not a time lag.
+  - Clicked wrist position: 19.8 mm, because the wrist joint sits under the skin and cannot be clicked precisely.
 
 ## Suggested next steps
 
-1. **Fingertip length question** (STATUS.md, "N7 open question"): the cloud reaches 4–9 mm past MANO's fingertips.
-   Test it with white paper on a dark book cover (sharp edge, known A4 size) to see whether the stereo edges are
-   inflated.
-2. Re-record the open-hand pose with the palm facing between the two cameras.
-3. Improve the rig calibration (N1): use more board poses spread through the hand's working volume, at ~25 cm.
-4. Speed up fitting: batch frames, or use a GPU.
+1. **Record more people** (PLAN.md P4). This is the one thing the dataset needs most: 1 person of the 5 wanted.
+   Per person and hand, ~10 min: 5 still poses (10 s each), then 8 motion sessions (30 s each). Take ruler
+   measurements at the start, then refit the shape with them once that person's joints have been clicked.
+2. Wrist rotation: the fit starts each stretch from LeapC's orientation, and LeapC itself flips there, so longer
+   propagation shifts do not help. Either anchor the orientation on hand-clicked frames, or re-record the pose
+   more slowly with the palm facing between the two cameras.
+3. The thumb is 7.9 mm shorter than the clicked length, and the middle finger 3.4 mm. Both are at the limit of
+   what MANO's shape space reaches with the beta prior in place.
+4. Improve the rig calibration (N1): use more board poses spread through the hand's working volume, at ~25 cm.
+   A rigid camera base (P1) is still open — the cameras have been bumped twice.

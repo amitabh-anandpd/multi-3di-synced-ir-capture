@@ -295,5 +295,6 @@ they limit the labels.
 - P3: done (process.py, finish.py, dataset.py).
 - P4: 1 person, both hands, 22 active sessions, ~12,000 labelled frames. Open: 4 more people. Shapes are fitted with
   `fit_mano.py --shape ... --click-lengths I M R P --thumb-mm T --palm-mm W` once the person's clicks and ruler numbers exist.
-- P5: teammate. Needs the 24 zips in drive_upload/ on the shared Drive.
+- P5: teammate. Needs the 22 zips in drive_upload/ on the shared Drive (the two excluded wrist-rotation
+  sessions are not packed).
 - P6: 46 GB of unreferenced raw sessions deleted; 44 session folders remain.
