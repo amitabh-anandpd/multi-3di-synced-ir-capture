@@ -1,6 +1,7 @@
 """Pack fitted sessions for the shared Drive / train_kaggle.ipynb (two_cam mode): one zip per session.
 
   python tools/pack_drive.py sessions/2026-11-06_035647 sessions/2026-11-11_232548 ...
+  python tools/pack_drive.py --verify     # check the zips already packed against dataset.json, pack nothing
 
 Keeps only the frame pairs that have a MANO label (mano/smoothed.npz), so the zips are a fraction of the session.
 Each zip holds <session>/: session.json, groups.json (labelled groups only), cam_A|cam_B/frames.bin + frames.csv
@@ -9,6 +10,7 @@ Writes drive_upload/<session>.zip (git-ignored); drag them into the Drive's sess
 """
 import argparse
 import csv
+import glob
 import io
 import json
 import os
@@ -45,10 +47,64 @@ def side_for(name, meta):
         return "right" if "right" in notes else "left" if "left" in notes else None
 
 
+def verify(out_dir):
+    """Check every packed zip against dataset.json before it goes to the Drive.
+
+    Returns (zips, bad, stale). `bad` is wrong data — a zip whose stated hand contradicts dataset.json would
+    mirror the hand once the consumer builds a MANO mesh from it. `stale` is only a zip packed before the
+    "side" key existed: its prose is still right, so it is reported but does not fail the check.
+    """
+    rows = json.load(open("dataset.json"))["sessions"]
+    bad, stale = [], []
+    zips = sorted(glob.glob(os.path.join(out_dir, "*.zip")))
+    for f in zips:
+        name = os.path.basename(f)[:-len(".zip")]
+        row = rows.get(name)
+        try:
+            zf = zipfile.ZipFile(f)
+            names = zf.namelist()
+        except (OSError, zipfile.BadZipFile) as e:
+            bad.append((name, f"unreadable: {e}"))
+            continue
+        if row is None:
+            bad.append((name, "not in dataset.json"))
+            continue
+        if row.get("exclude"):
+            bad.append((name, "marked exclude in dataset.json but packed for the Drive"))
+        if not any(n.endswith("mano/smoothed.npz") for n in names):
+            bad.append((name, "no mano/smoothed.npz (the labels)"))
+        li = [n for n in names if n.endswith("label_info.json")]
+        if not li:
+            bad.append((name, "no label_info.json"))
+            continue
+        info = json.loads(zf.read(li[0]))
+        hand = row.get("hand")
+        if f"({hand} hand" not in info.get("labels", ""):
+            bad.append((name, f"label_info says it is not a {hand} hand, but dataset.json says it is"))
+        elif info.get("side") is None:
+            stale.append(name)  # packed before the "side" key; prose is correct, so re-pack when convenient
+        elif info.get("side") != hand:
+            bad.append((name, f"label_info side {info.get('side')!r} != dataset.json hand {hand!r}"))
+    return zips, bad, stale
+
+
 ap = argparse.ArgumentParser()
-ap.add_argument("sessions", nargs="+")
+ap.add_argument("sessions", nargs="*")
 ap.add_argument("--out", default="drive_upload")
+ap.add_argument("--verify", action="store_true",
+                help="check the zips already in --out against dataset.json and exit (packs nothing)")
 args = ap.parse_args()
+if args.verify:
+    checked, problems, stale = verify(args.out)
+    for name, why in problems:
+        print(f"  WRONG  {name}: {why}")
+    if stale:
+        print(f"  {len(stale)} zip(s) packed before the \"side\" key (prose is correct; re-pack when convenient): "
+              f"{', '.join(stale[:4])}{', ...' if len(stale) > 4 else ''}")
+    print(f"{len(checked) - len({n for n, _ in problems})} of {len(checked)} zips OK in {args.out}")
+    sys.exit(1 if problems else 0)
+if not args.sessions:
+    ap.error("give sessions to pack, or --verify")
 os.makedirs(args.out, exist_ok=True)
 for s in args.sessions:
     name = os.path.basename(os.path.normpath(s))

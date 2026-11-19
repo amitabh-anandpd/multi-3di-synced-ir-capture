@@ -938,3 +938,30 @@ so a consumer relying on it needs a fallback until they are re-packed too.
 
 Worth noting what caught it: a routine integrity check of the zips before upload, not a test. Nothing in the
 pipeline validates that a zip's stated metadata matches dataset.json.
+
+### Two guards against the bugs this sitting produced (2026-11-19)
+
+Both of today's bugs were found by luck — one by a Kaggle crash after 7 sessions had already been fitted, the
+other by an ad-hoc look inside a zip before uploading. Neither had anything watching for it, so both are now
+checked automatically.
+
+**`fit_batch.py --pack` refuses an input with no LeapC joints.** `--fit` initialises from those joints, so an input
+without any is unusable — but it failed only on Kaggle, after the earlier sessions in the same run had been fitted,
+costing the whole run. `pack()` now returns False and writes nothing when `sum(has_leap)` is 0, and the CLI exits
+non-zero naming the refused sessions. That return code is what `process.py:113` already uses to mark a session
+failed and leave `fit_input` unset, so an unusable session can no longer reach `fit_inputs/` and look uploadable.
+Verified against `2026-11-18_230917`, the session that caused the crash: refused, exit 1, no file written, while a
+good session still packs and exits 0.
+
+**`tools/pack_drive.py --verify` checks the packed zips against dataset.json.** For every zip in `drive_upload/`:
+it opens, it is listed in dataset.json, it is not marked `exclude`, it holds `mano/smoothed.npz`, and its
+`label_info.json` states the same hand dataset.json does. A wrong hand is reported as `WRONG` and fails the check,
+because it mirrors the hand once a consumer builds a MANO mesh from it. A zip packed before the `side` key existed
+is reported separately and does *not* fail, since its prose is still correct — otherwise the check would fail
+permanently on P01's 12 left-hand zips and quickly be ignored.
+
+`finish.py` now runs `--verify` after packing and refuses to print the upload instruction if anything is WRONG, so
+the check runs without being remembered.
+
+Verified both ways: it passes on the current 45 zips (exit 0, 12 noted as stale) and catches forged zips — a
+right-hand session relabelled left, and one missing its labels entirely (exit 1).

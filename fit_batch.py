@@ -21,6 +21,7 @@ import glob
 import json
 import os
 import shutil
+import sys
 import time
 
 import numpy as np
@@ -47,10 +48,17 @@ def pack(session, out_dir, every=1, npts=1500, min_pts=500, seed=0):
         L.append(leap[fid] if fid in leap else np.zeros((21, 3)))
     name = os.path.basename(os.path.normpath(session))
     path = os.path.join(out_dir, f"{name}.npz")
+    if not sum(H):
+        # --fit initialises from the LeapC joints, so an input with none is unusable: it fails only on
+        # Kaggle, after the sessions before it have already been fitted. Refuse here instead.
+        print(f"{session}: {len(F)} frames but NONE has LeapC joints -> not packed. Neither camera tracked "
+              f"this hand (check `type` in <session>/cam_*/tracking.csv against the true side); re-record it.")
+        return False
     np.savez_compressed(path, session=name, frames=np.array(F), points=np.array(P, np.float32),
                         leap=np.array(L, np.float32), has_leap=np.array(H), side=sh["side"],
                         betas=np.array(sh["betas"], np.float32))
     print(f"{session}: {len(F)} frames ({sum(H)} with LeapC joints) -> {path} ({os.path.getsize(path) / 1e6:.0f} MB)")
+    return True
 
 
 def normals(v, faces):
@@ -311,8 +319,9 @@ if __name__ == "__main__":
     args = ap.parse_args()
     if args.pack:
         os.makedirs(args.out, exist_ok=True)
-        for s in args.pack:
-            pack(s, args.out, args.every)
+        refused = [s for s in args.pack if not pack(s, args.out, args.every)]
+        if refused:
+            sys.exit(f"not packed: {', '.join(refused)}")
     elif args.fit:
         for p in args.fit:
             fit(p, args.iters, args.chunk, passes=args.passes, first=args.range)

@@ -85,4 +85,10 @@ if sessions:
         p = os.path.join("drive_upload", f"{dataset.name_of(s)}.zip")
         if os.path.exists(p):
             dataset.update(s, drive_zip=p, drive_zip_mb=round(os.path.getsize(p) / 1e6))
+    # Check what is about to be uploaded against dataset.json. A zip whose stated hand is wrong mirrors the
+    # hand once the consumer builds a MANO mesh from it, and that is far cheaper to catch here than on the Drive.
+    out = subprocess.run([sys.executable, "tools/pack_drive.py", "--verify"], capture_output=True, text=True)
+    print("\n" + out.stdout.strip())
+    if out.returncode:
+        sys.exit("drive_upload/ failed verification (above): fix those zips before uploading")
     print("next: drag these drive_upload/*.zip into the shared Drive's sessions/ folder")
