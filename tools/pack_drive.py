@@ -36,6 +36,15 @@ def rig_for(name):
     return path
 
 
+def side_for(name, meta):
+    """left/right, from dataset.json's `hand` (same source fit_mano.py uses), else the session notes."""
+    try:
+        return json.load(open("dataset.json"))["sessions"][name]["hand"]
+    except (OSError, KeyError, ValueError):
+        notes = (meta.get("notes") or "").lower()
+        return "right" if "right" in notes else "left" if "left" in notes else None
+
+
 ap = argparse.ArgumentParser()
 ap.add_argument("sessions", nargs="+")
 ap.add_argument("--out", default="drive_upload")
@@ -51,6 +60,7 @@ for s in args.sessions:
     g["groups"] = [x for x in g["groups"] if x["frames"]["cam_A"] in labelled]
     want = {c: {x["frames"][c] for x in g["groups"]} for c in ("cam_A", "cam_B")}
     rig = rig_for(name)
+    side = side_for(name, meta)
     dst = os.path.join(args.out, f"{name}.zip")
     with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
         zf.write(os.path.join(s, "session.json"), f"{name}/session.json")
@@ -60,7 +70,9 @@ for s in args.sessions:
             zf.write(rig, f"{name}/rig.json")
         zf.writestr(f"{name}/label_info.json", json.dumps({
             "labels": "mano/smoothed.npz: joints (n, 21, 3) mm in cam_A's rectified-left (unit) frame, per frame id in "
-                      "'frames'; orient/pose/transl/betas are the MANO parameters (left hand, flat_hand_mean, no PCA)",
+                      f"'frames'; orient/pose/transl/betas are the MANO parameters ({side} hand, flat_hand_mean, "
+                      "no PCA)",
+            "side": side,  # load MANO with is_rhand=(side == "right"); left and right are mirror images
             "joint_order": "MANO 16 joints + 5 tips (thumb, index, middle, ring, pinky tip as 16..20)",
             "rig": f"rig.json = cam_B in cam_A's frame, from {rig}",
             "frames": "only frame pairs with a MANO label are kept; groups.json pairs cam_A and cam_B frame ids"}, indent=1))

@@ -912,3 +912,29 @@ slack at its source.
 **Open:** upload the 23 new zips; re-record `P02 left wrist rotation`, `P02 left grasping object` and
 `P02 right pinch still`; click P02's joints and refit both shapes with real `--click-lengths` (which then requires
 re-packing and re-fitting that hand's sessions).
+
+### Bug: every right-hand zip claimed to be a left hand (found and fixed 2026-11-19)
+
+`tools/pack_drive.py` hardcoded the string `(left hand, flat_hand_mean, no PCA)` in the `label_info.json` it
+writes, so **all 22 right-hand zips told the consumer they were left hands** — 10 of P01's (already on the Drive)
+and 12 of P02's. The side was recoverable from the zip only by string-matching `session.json`'s free-text `notes`.
+
+Impact today is nil: `train_kaggle.ipynb` has `USE_MANO = False` and trains a ResNet-18 regressing the 21 joints,
+reading `joints` from `mano/smoothed.npz` and never opening `label_info.json`. The `joints` arrays are correct 3D
+positions whatever the side label says. The danger is latent — the notebook already downloads both `MANO_LEFT.pkl`
+and `MANO_RIGHT.pkl`, and the moment `USE_MANO` is turned on and the model consumes `orient/pose/betas`, a wrong
+side silently mirrors the hand. A mirrored hand is a plausible-looking label, so it would be hard to trace back.
+
+Fixed by deriving the side from `dataset.json`'s `hand` field (the same source `fit_mano.py:131` uses), falling
+back to the session notes, and adding an explicit machine-readable `"side"` key so consumers never have to parse
+prose:
+
+    "side": side,  # load MANO with is_rhand=(side == "right"); left and right are mirror images
+
+All 23 P02 zips re-packed with the fix before upload (no extra bandwidth, they had not been uploaded).
+**P01's 10 right-hand zips on the Drive still carry the wrong string** and need re-packing and re-uploading before
+anyone sets `USE_MANO = True`. P01's 12 left-hand zips say "left" correctly but predate the explicit `side` key,
+so a consumer relying on it needs a fallback until they are re-packed too.
+
+Worth noting what caught it: a routine integrity check of the zips before upload, not a test. Nothing in the
+pipeline validates that a zip's stated metadata matches dataset.json.
