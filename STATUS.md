@@ -788,3 +788,127 @@ on these frames are wrong, not just switched, so both sessions stay `exclude` in
 `finish.py` now skips excluded sessions when packing for the Drive (before, it packed them; the two zips were deleted).
 The ±128 shifts stay (harmless; better surface for 232756). Open: an orientation start that does not come from LeapC
 (e.g. the clicked frames as anchors), or re-record wrist rotation slower with the palm facing between the cameras.
+
+## P02 recorded, both hands (2026-11-18/19)
+
+Second person in the dataset (P01 was the only one until now). 26 sessions recorded in one sitting, 23 packed for
+Kaggle (13,205 frames, 195 MB), 3 excluded.
+
+**Rig.** Board `2026-11-18_223925`, 77 views, board volume 214 x 96 x 184 mm. Corner residual 2.90 mm median /
+8.71 p95 — worse than the old rig's 2.64 mm on that measure, but the hand gap on the first hand session was
+**1.62 mm** with 99 % overlap, the best of any sitting so far. The two numbers disagree because the corner residual
+is measured on the board and the hand gap where the hand actually is: P01's right hand scored 5–7 mm from a rig whose
+corner residual looked fine, because the board had never been held there. Sweeping the board through the whole hand
+space (including the edges of both views) is what fixed it. Rig gaps this sitting: left 1.58–3.52 mm, right
+2.06–5.01 mm, with 21 of 26 under 3 mm.
+
+**Protocol changes from P01** (PLAN.md P4): wrist rotation recorded slowly with the palm kept in the gap between the
+cameras, and two sessions added that P01 never had — grasping a small dark matte object, and movement out to the
+edges of the shared view. The right-hand wrist rotation passed its rig check at 2.45 mm with 2,421 correctly-sided
+tracked frames; both of P01's wrist-rotation sessions had to be excluded, so the change works on at least one hand.
+
+**Chirality: the rule is not "cam_B is mirrored".** Each camera guesses the hand's side from its own 90° viewpoint, so
+cam_A reads a LEFT hand correctly and cam_B reads a RIGHT hand correctly. Wrong-side rows are filtered out, so a
+session is usable only if at least one camera labelled it correctly. Two left-hand sessions had **zero** correctly
+labelled frames on both cameras (wrist rotation 0 of 2538, grasping 0 of 2549); their packed npz has `has_leap` all
+False, so the Kaggle fit would have no initialisation at all. The wrist rotation passed its rig check and looked
+healthy, so the rig check does not catch this — count rows in `<session>/<cam>/tracking.csv` whose `type` column
+equals the true side before trusting a session.
+
+**Shape fits** (ruler: thumb base-to-tip 100 mm, middle knuckle-to-tip 80 mm, palm width 85 mm):
+
+| | fit | thumb | index | middle | ring | little | palm |
+|---|---|---|---|---|---|---|---|
+| P02 left  | 2.37 mm | 102.6 | 82.8 | 81.2 | 81.0 | 61.1 | 82.5 |
+| P02 right | 2.52 mm |  98.5 | 81.1 | 84.3 | 81.2 | 65.9 | 83.2 |
+
+The left fit was given only `--thumb-mm 100 --palm-mm 85` and independently produced middle 81.2 against the ruler's
+80 — a useful confirmation, since no finger length was supplied. P02 is a broad hand with short fingers (P01: middle
+105, palm 70), which is the shape diversity the dataset lacked.
+
+The same two flags on the right hand gave thumb 101.9 but pushed middle to 89.5: MANO couples palm width to finger
+length, so constraining the palm stretched the fingers into a different optimum. Adding
+`--click-lengths 82.8 81.2 81.0 61.1` — the left hand's fitted lengths, assuming the two hands are symmetric — gave
+the table above, costing 0.3 mm of surface fit. **Those four targets are not independent measurements**; replace them
+once the right hand's joints are clicked and `tools/eval_clicks.py` gives real 3D lengths.
+
+**Excluded** (reasons stored in dataset.json): left wrist rotation and left grasping (no usable tracking; both to be
+re-recorded), right pinch still (rig gap 5.01 mm, 68 % overlap, 17.7k points/frame against ~46k for the neighbouring
+stills — a pinch self-occludes from one camera). Two sessions that missed the 3.0 mm rig threshold by 0.02 and
+0.06 mm (left free fast 3.02, right pinches each finger 3.06) were packed deliberately, since every neighbouring
+session in the same sitting sits at 2.1–2.9 mm; judge them on surface error after fitting.
+
+**Open:** the Kaggle fit for these 23, then `finish.py`, clicking P02's joints, and a shape refit with real click
+lengths. FPS drifted to 77–80 on several right-hand sessions (Control Panel left open); it does not invalidate the
+data but costs frames.
+
+## P02 fitted and packed (2026-11-19)
+
+The Kaggle fit crashed first time on `2026-11-18_230917.npz` ("no frame has LeapC joints to start from"). That
+session was marked `exclude` in dataset.json but its `.npz` was still in `fit_inputs/`, so a `fit_inputs/*.npz`
+glob picked it up. **`exclude` is read by finish.py but by nothing upstream**, so an excluded session's packed input
+still looks uploadable. Worth a guard in `fit_batch.py --pack`: refuse to write an input whose frames all lack
+LeapC joints. Re-running with the file removed, and skipping any session that already had `_params.npz`, saved
+refitting the 7 that had already succeeded.
+
+All 23 fitted, smoothed and packed. **The dataset is now 45 active sessions, 25,633 labelled frames, 7.3 GB.**
+
+| | sessions | frames | median surface | worst | Drive |
+|---|---|---|---|---|---|
+| P01 | 22 | 12,428 | 2.45 mm | 3.80 mm | 3.56 GB |
+| P02 | 23 | 13,205 | 2.37 mm | 3.12 mm | 3.78 GB |
+
+P02 is the better sitting on both median and worst case. Error scales cleanly with hand speed (2.27 mm below
+50 mm/s, 2.79 mm above 400 mm/s), which is the expected shape for a fit that is tracking rather than guessing.
+
+**The wrist-rotation protocol change worked.** Both of P01's wrist rotations were excluded (3.80 and 3.33 mm);
+P02's right wrist rotation came in at 2.36 mm. Rotating slowly, after acquiring the lock with an open hand, is
+what fixed it.
+
+**Palm/back switches rose from 6 (P01) to 58 (P02), but 48 of the 58 are in the three pose types P01 never
+recorded** — edge of view (21 right, 16 left) and grasping object (11). Those three also carry the only surface
+errors above 3 mm. One camera sees very little hand in them, so there is not enough surface to resolve which way
+round it is. They are kept, not excluded: they are the hard-case coverage the dataset was missing, and
+`palm_back_switches` is already a per-session field in dataset.json, so the training side can filter or downweight
+without a new convention. The right wrist rotation's 8 switches are the exception worth noting — it passed on
+surface error but the hand still flips through edge-on views, so the protocol fixed the geometry, not the
+orientation ambiguity.
+
+### Shape measurements: three sources reconciled
+
+P02 supplied a third table, "finger lengths extracted from drawings", for both hands. **The right tracing is
+uniformly ~5 % larger than the left**: `right = left x 1.05` predicts index 81.9 (drawing 82), ring 78.8 (80),
+little 63.0 (63) and thumb 59.9 (60) — all within 1.2 mm. Only the middle is an outlier (predicted 84.0, drawing
+90). A clean constant multiple across every finger is a tracing scale artifact, not anatomy; real left/right
+asymmetry is 1–3 mm and irregular. Do not feed the drawing's thumb values to `--thumb-mm`: at 57/60 mm they are
+measured from the MCP knuckle, while the flag wants CMC-to-tip (ruler 100 mm, fitted 102.6/98.5).
+
+P02 then confirmed two readings directly — right pinky correct, left not; left thumb correct. **Both are supported
+by the scan data, and both are already what the fitted shapes encode:**
+
+| | MANO fit | LeapC | drawing | verdict |
+|---|---|---|---|---|
+| thumb | L 102.6 > R 98.5 | L 92.8 > R 90.6 | L 57 < R 60 | left longer; drawing's right is the bad value |
+| pinky | L 61.1 < R 65.9 | L 54.2 < R 55.3 | L 60 < R 63 | right longer; all three agree |
+
+So no refit is needed — and none should be attempted now in any case, since the betas are embedded in the `.npz`
+files already fitted; changing a shape means re-packing and re-running the whole Kaggle fit for that hand.
+
+**LeapC as a cross-check, with limits.** The `leap` array in `fit_inputs/*.npz` is in MANO's 21-joint order, not
+MediaPipe's; the indices are `fit_mano.py:41-42`. Assuming MediaPipe order sums the palm metacarpal into every
+finger and yields nonsense (index 127–143 mm). LeapC's scatter is too wide to settle 1–5 mm differences (the right
+pinky read 58.2 mm open and 52.3 mm spread on the same hand), and its absolutes run ~15 mm short of MANO because
+the MCP landmark differs, so only within-LeapC left/right comparison is valid. It confirms direction, never
+magnitude. Related: LeapC re-estimates bone length per frame and is poor on curled poses (right middle 79.0 open,
+61.5 fist, 53.8 point) — so part of the evaluation's 10–14 mm "vs LeapC" gap is LeapC's error, not ours.
+
+**The right hand's shape is less determined than the left**, and the cause is the lost pinch session: the left
+shape was fitted from 5 still poses, the right from 4, because `232011` (right pinch still) failed the rig check at
+5.01 mm. Pinch is the pose that most constrains finger length. The right middle slides with the constraints —
+81.9 mm unconstrained (residual 2.23), 89.5 mm with thumb+palm only, 84.3 mm with thumb+palm+left's lengths
+(residual 2.52) — a 7.6 mm spread from the same point cloud. Re-recording a right pinch still would remove that
+slack at its source.
+
+**Open:** upload the 23 new zips; re-record `P02 left wrist rotation`, `P02 left grasping object` and
+`P02 right pinch still`; click P02's joints and refit both shapes with real `--click-lengths` (which then requires
+re-packing and re-fitting that hand's sessions).

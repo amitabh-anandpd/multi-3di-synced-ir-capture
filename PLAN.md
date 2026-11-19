@@ -293,8 +293,12 @@ they limit the labels.
 - P2: done. 99 clicked frames, both hands: MANO 10.9 mm vs LeapC 14.2 mm (median, all joints); finger lengths within
   3.5 mm of the clicks except the thumb (-7.9 mm). Fingertips are not corrected (edge inflation +5–8 mm tested, not applied).
 - P3: done (process.py, finish.py, dataset.py).
-- P4: 1 person, both hands, 22 active sessions, ~12,000 labelled frames. Open: 4 more people. Shapes are fitted with
+- P4: 2 people (P01, P02), both hands each. **45 active sessions, 25,633 labelled frames.** P01: 22 sessions,
+  12,428 frames, median surface 2.45 mm, on the Drive. P02 (2026-11-18, fitted 2026-11-19): 23 sessions,
+  13,205 frames, median surface 2.37 mm — the better of the two sittings, and its worst session (3.12 mm) beats
+  P01's worst (3.80 mm). 5 excluded overall; 3 P02 sessions to be re-recorded.
+  Open: 3 more people. Shapes are fitted with
   `fit_mano.py --shape ... --click-lengths I M R P --thumb-mm T --palm-mm W` once the person's clicks and ruler numbers exist.
-- P5: teammate. Needs the 22 zips in drive_upload/ on the shared Drive (the two excluded wrist-rotation
+- P5: teammate. Needs the 45 zips in drive_upload/ on the shared Drive (22 P01 + 23 P02, 7.3 GB; excluded
   sessions are not packed).
 - P6: 46 GB of unreferenced raw sessions deleted; 44 session folders remain.
