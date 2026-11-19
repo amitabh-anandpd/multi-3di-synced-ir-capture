@@ -965,3 +965,104 @@ the check runs without being remembered.
 
 Verified both ways: it passes on the current 45 zips (exit 0, 12 noted as stale) and catches forged zips — a
 right-hand session relabelled left, and one missing its labels entirely (exit 1).
+
+## P2 done: hand-clicked joint error (2026-11-19)
+
+All 46 sessions (P01 + P02) clicked, 191 frames, 3,300 joint observations (`tools/click_joints.py`, `--per 2`
+default, frames at 0.2/0.8 through each session). `tools/eval_clicks.py`:
+
+| joint type | MANO mm (med / p90) | LeapC mm (med / p90) |
+|---|---|---|
+| wrist | 20.9 / 28.8 | 20.1 / 32.8 |
+| knuckle | 12.3 / 29.7 | 13.3 / 31.8 |
+| middle joint | 10.8 / 24.3 | 13.1 / 24.7 |
+| end joint | 9.9 / 25.4 | 11.9 / 28.2 |
+| tip | **9.0 / 32.7** | **18.6 / 39.2** |
+| all | 11.0 / 27.4 | 14.3 / 31.7 |
+
+**MANO beats LeapC on every joint type.** The fingertip question is answered the opposite way from the
+edge-inflation worry raised by the paper test (`paper_edge.py`, +5–8 mm): MANO's tip is the *best*-tracked joint
+in the fit, more than twice as good as LeapC's. No fingertip correction is applied.
+
+**The wrist is the clear outlier** at 20.9 mm, nearly double the next worst (knuckle, 12.3). Unresolved whether
+this is a real MANO limitation (global translation/orientation has the least point-cloud constraint of anything
+fit) or a clicking artifact (the wrist has no visible bone to click against in an IR image, unlike every other
+joint). Worth a targeted look before trusting a sub-10 mm number here.
+
+**P0 is NOT resolved by this.** Its exit needs clicks at the specific palm/back switch frames; `click_joints.py`
+samples fixed fractions (0.2, 0.8) through each session with no awareness of switches, so this click set settles
+P2 but not P0. P0 still needs its own targeted clicks at the 64 switch frames (or a sample of them) before the
+repair can be decided.
+
+### Click-derived finger lengths disagree with the shape fit, mainly on P02's thumb and middle
+
+Finger length (knuckle/CMC to tip), median over moments where all 4 joints were clicked in both cameras and
+triangulated:
+
+| finger | clicked | MANO | diff |
+|---|---|---|---|
+| thumb | 116.4 | 109.5 | +10.8 mm |
+| middle | 92.8 | 84.8 | +7.3 mm |
+| index | 87.9 | 83.4 | +2.3 |
+| ring | 84.9 | 81.4 | +1.3 |
+| little | 68.9 | 69.1 | +0.8 |
+
+Index/ring/little agree with MANO within 2.3 mm. Thumb and middle are both ~7–11 mm longer in the clicks, and
+p25 stays positive on both, so this is systematic, not scatter.
+
+Split by person (isolating labels/joints/ temporarily; not saved, reran eval_clicks.py afterward to restore the
+full 191-frame eval.json): P02 alone gives thumb clicked 112.4 vs MANO 100.5 (+12.2), middle clicked 92.0 vs MANO
+81.2 (+8.8) — same pattern, same two fingers.
+
+This **contradicts the earlier three-source reconciliation** (ruler 100/80, LeapC ~91/69-79, fit 102.6/81.2, all
+agreeing P02's shape needed no refit — see "LeapC joints as a measurement cross-check" above). The clicks now
+land closer to the *drawing's* right-middle reading (90 mm) that was dismissed there as a tracing-scale artifact.
+
+Do not refit from this alone. Thumb and middle are exactly the two fingers most exposed to click bias:
+foreshortening from the clicked camera's viewpoint inflates apparent length most on whichever finger is most
+extended toward the lens, and the thumb's base (CMC, inside the palm) is the single hardest landmark in this
+whole scheme to click consistently. Three sources (ruler, LeapC, fit) agree on the shorter length; two (drawing,
+clicks) agree on the longer one; the two in the second group share the same observer and the same optical
+failure mode, so they are not as independent as two-against-three suggests. Treat as an open question, not a
+correction: worth a second, careful click pass on just these two fingers' tips in the stillest frames
+(open/spread, not a curled pose where foreshortening is worst) before deciding either way.
+
+### Correction (2026-11-19, later): P02's shapes are wrong; refit from the clicks
+
+The previous section's caution was based on a wrong argument. The click-derived finger lengths are **3D**:
+`eval_clicks.py` triangulates each joint from both cameras (rays must meet within 15 mm), so 2D foreshortening does
+not apply. And clicks are what the plan always specified for shapes (P4: `--click-lengths` "once the person's
+clicks exist"); P01's shapes were fitted that way. `eval_clicks.py` now takes `--person` / `--hand` (filtered runs
+leave eval.json alone) and reports palm width as `fit_mano.py --palm-mm` defines it (joint 1 to joint 7).
+
+| P02 | thumb | index | middle | ring | little | palm |
+|---|---|---|---|---|---|---|
+| left, clicked | 113.6 | 86.8 | 90.7 | 84.2 | 62.4 | 69.2 |
+| left, current shape | 101.4 | 83.2 | 81.0 | 80.9 | 67.2 | 82.5 |
+| right, clicked | 111.8 | 87.5 | 92.5 | 84.1 | 67.5 | 73.7 |
+| right, current shape | 100.1 | 81.1 | 84.8 | 80.6 | 63.9 | 83.2 |
+
+The clicks are trustworthy here: the two hands, clicked independently, agree within 2 mm on index, middle and
+ring, and the two asymmetries they show (left thumb longer, right little finger longer) are exactly the two Ravi
+confirmed himself. For P01, fitted from clicks with palm 70, clicked palm is 70.8 / 77.4 against MANO 68.9 / 70.4.
+
+**Why P02 went wrong:** its shapes were constrained with ruler numbers (thumb 100, palm 85). A ruler measures
+skin-surface landmarks — knuckle width across the outside of the hand, finger length from the visible finger
+base — while MANO's joints are joint *centres*, inside the hand. The palm constraint (85 against a clicked
+69–74) forced the palm ~10–13 mm too wide, and because MANO couples palm width to finger length, the fingers came
+out short; the point cloud alone also under-constrains where the MCP joint sits inside the palm (the first,
+unconstrained right fit was short as well). The "left fit independently reproduced the ruler's middle finger"
+was therefore not independent confirmation — both were short for the same landmark reason. P02 is not the
+"broad hand with short fingers" STATUS described; clicked, its palm (69–74) is close to P01's (71–77) and its
+fingers are 2–6 mm shorter.
+
+**Never constrain a shape with a ruler or tracing again — only with triangulated clicks.** Refit:
+
+    python -u fit_mano.py --shape <the 5 left stills> --person P02 --click-lengths 86.8 90.7 84.2 62.4 --thumb-mm 113.6 --palm-mm 69.2
+    python -u fit_mano.py --shape <the 4 right stills> --person P02 --click-lengths 87.5 92.5 84.1 67.5 --thumb-mm 111.8 --palm-mm 73.7
+
+Then re-pack all 23 P02 fit inputs (betas are embedded), refit on Kaggle, `finish.py`, re-upload the 23 zips. Do
+NOT run `tools/prune_raw.py P02` before the Drive zips are re-packed: `pack_drive.py` needs frames.bin. With the
+fingers pinned by clicks, the right pinch still re-record matters much less (it was wanted to constrain exactly
+these lengths); the two left re-records are still needed for coverage. The wrist's 20–26 mm click error is
+probably the same landmark issue (a clicked wrist is a skin crease, MANO's is the joint centre).

@@ -243,11 +243,14 @@ Same rules: each milestone has an exit check, results go in STATUS.md.
   Shows how much a fit is trusted where only one camera sees the hand.
 - Hand-clicked 2D keypoints: `tools/click_joints.py` (21 joints, 2 frames per camera per fitted session = 52
   frames; hidden joints skipped) and `tools/eval_clicks.py` (MANO's and LeapC's joints projected into the clicked
-  camera exactly as fused, error in px and mm). Done 2026-11-12: tools built, projection checked on both cameras;
-  clicking pending. The board edge test (`tools/paper_edge.py`) gave stereo edges +5–8 mm (STATUS.md).
+  camera exactly as fused, error in px and mm). Done 2026-11-19: all 46 sessions (P01 + P02) clicked, 191 frames,
+  3,300 joint observations. The board edge test (`tools/paper_edge.py`) gave stereo edges +5–8 mm (STATUS.md).
 
-**Exit:** a label error estimate per joint type (median, p90) in STATUS.md, and the fingertip question answered
-(with a correction applied if edges are inflated).
+**Exit: done.** MANO beats LeapC on every joint type, overall 11.0 mm vs 14.3 mm median, and the fingertip
+question is answered the opposite way from the edge-inflation worry: MANO's tip is the *best*-tracked joint
+(9.0 mm) and more than twice as good as LeapC's (18.6 mm), so no correction is applied. The wrist is the clear
+outlier (20.9 mm) and is now the open question (see STATUS.md). A new discrepancy surfaced on P02's thumb and
+middle finger — see STATUS.md, "click-derived finger lengths disagree with the shape fit".
 
 ## P3 — One command per step
 - `process.py <sessions>`: pair → fuse → pack (`fit_inputs/`), with the rig check and FPS in the log.

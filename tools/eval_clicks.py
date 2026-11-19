@@ -20,6 +20,24 @@ from fit_mano import MANO_TO_LEAP, load_shape  # noqa: E402
 from segment import LABELS, Segmenter  # noqa: E402
 from stereo import rig_path  # noqa: E402
 
+import argparse  # noqa: E402
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--person", help="only sessions of this person in dataset.json (e.g. P02)")
+ap.add_argument("--hand", choices=["left", "right"], help="only sessions of this hand")
+args = ap.parse_args()
+FILTERED = bool(args.person or args.hand)
+_rows = json.load(open("dataset.json"))["sessions"] if FILTERED else {}
+
+
+def wanted(session):
+    """Whether a clicked session passes --person / --hand (always, without them)."""
+    if not FILTERED:
+        return True
+    r = _rows.get(session, {})
+    return (not args.person or r.get("person") == args.person) and (not args.hand or r.get("hand") == args.hand)
+
+
 TYPES = {"wrist": [0], "knuckle": [1, 4, 7, 10, 13], "middle joint": [2, 5, 8, 11, 14],
          "end joint": [3, 6, 9, 12, 15], "tip": [16, 17, 18, 19, 20]}
 
@@ -46,6 +64,8 @@ def project(P, unit):
 rows, segs = [], {}
 for f in sorted(glob.glob(os.path.join(LABELS, "joints", "*", "*", "*.json"))):
     c = json.load(open(f))
+    if not wanted(c["session"]):
+        continue
     s = os.path.join("sessions", c["session"])
     uv = np.array([p if p is not None else [np.nan, np.nan] for p in c["uv"]], float)
     z = np.load(os.path.join(s, "mano", "smoothed.npz"))
@@ -91,9 +111,13 @@ for key in sorted({(r["session"], r["cam"]) for r in rows}):
     rs = [r for r in rows if (r["session"], r["cam"]) == key]
     print(f"  {key[0]} {key[1]}: {med(rs, 'mano_mm', allj)[0]:.1f} mm  (LeapC {med(rs, 'leap_mm', allj)[0]:.1f})  "
           f"[{len(rs)} frames]")
-json.dump({"summary": summary, "frames": [{k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in r.items()}
-                                          for r in rows]}, open(os.path.join(LABELS, "joints", "eval.json"), "w"))
-print(f"\nwrote {os.path.join(LABELS, 'joints', 'eval.json')}")
+if FILTERED:  # a subset must not overwrite the full-dataset results other tools read
+    print("\n(filtered run: eval.json / eval_3d.json left as they were)")
+else:
+    json.dump({"summary": summary, "frames": [{k: (v.tolist() if isinstance(v, np.ndarray) else v)
+                                               for k, v in r.items()} for r in rows]},
+              open(os.path.join(LABELS, "joints", "eval.json"), "w"))
+    print(f"\nwrote {os.path.join(LABELS, 'joints', 'eval.json')}")
 
 # --- 3D: moments clicked in both cameras -> triangulated joints -> 3D error and finger lengths
 CHAIN = {"thumb": [13, 14, 15, 16], "index": [1, 2, 3, 17], "middle": [4, 5, 6, 18], "ring": [10, 11, 12, 19],
@@ -101,6 +125,8 @@ CHAIN = {"thumb": [13, 14, 15, 16], "index": [1, 2, 3, 17], "middle": [4, 5, 6, 
 pairs = {}
 for f in glob.glob(os.path.join(LABELS, "joints", "*", "*", "*.json")):
     c = json.load(open(f))
+    if not wanted(c["session"]):
+        continue
     pairs.setdefault((c["session"], c["cam_A_frame"]), {})[c["cam"]] = c
 tri = []
 for (sess, fa), cc in sorted(pairs.items()):
@@ -155,5 +181,15 @@ if tri:
                            "diff_mm": float(np.median(d)), "moments": len(lx)}
             print(f"    {f_:<7} clicked {np.median(lx):5.1f}  MANO {np.median(lm):5.1f}  difference {np.median(d):+5.1f} mm "
                   f"(p25 {np.percentile(d, 25):+.1f}, p75 {np.percentile(d, 75):+.1f})  [{len(lx)}]")
-    json.dump({"moments": len(tri), "finger_lengths": lengths},
-              open(os.path.join(LABELS, "joints", "eval_3d.json"), "w"), indent=1)
+    # palm width as fit_mano.py --palm-mm defines it: index MCP (1) to little MCP (7)
+    pw = [(np.linalg.norm(t["clicked"][1] - t["clicked"][7]), np.linalg.norm(t["mano"][1] - t["mano"][7]))
+          for t in tri if np.isfinite(t["clicked"][[1, 7]]).all()]
+    if pw:
+        px, pm = np.array(pw).T
+        lengths["palm"] = {"clicked_mm": float(np.median(px)), "mano_mm": float(np.median(pm)),
+                           "diff_mm": float(np.median(px - pm)), "moments": len(pw)}
+        print(f"  palm width, index to little knuckle (fit_mano.py --palm-mm): clicked {np.median(px):5.1f}  "
+              f"MANO {np.median(pm):5.1f}  difference {np.median(px - pm):+5.1f} mm  [{len(pw)}]")
+    if not FILTERED:
+        json.dump({"moments": len(tri), "finger_lengths": lengths},
+                  open(os.path.join(LABELS, "joints", "eval_3d.json"), "w"), indent=1)
