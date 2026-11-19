@@ -1,0 +1,24 @@
+#### session 2026-11-20_002354  rig 2026-11-19_141138
+  python pair_frames.py <board session>
+  python calib_rig.py <board session>
+and check again.
+#### session 2026-11-20_002722  rig 2026-11-19_141138
+  python pair_frames.py <board session>
+  python calib_rig.py <board session>
+and check again.
+#### session 2026-11-20_002354  rig 2026-11-19_141219
+  python pair_frames.py <board session>
+  python calib_rig.py <board session>
+and check again.
+#### session 2026-11-20_002722  rig 2026-11-19_141219
+  python pair_frames.py <board session>
+  python calib_rig.py <board session>
+and check again.
+#### session 2026-11-20_002354  rig 2026-11-20_002809
+rig check: gap 2.55 mm, overlap 49 %  ->  OK
+hand distance: 195 mm from cam_A, 167 mm from cam_B
+fps: cam_A 44.5, cam_B 45.1  (below 85: close the Ultraleap Control Panel, plug the laptop in)
+#### session 2026-11-20_002722  rig 2026-11-20_002809
+rig check: gap 2.66 mm, overlap 83 %  ->  OK
+hand distance: 207 mm from cam_A, 247 mm from cam_B
+fps: cam_A 72.1, cam_B 72.4  (below 85: close the Ultraleap Control Panel, plug the laptop in)

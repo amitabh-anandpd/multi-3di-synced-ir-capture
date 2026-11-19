@@ -1066,3 +1066,41 @@ NOT run `tools/prune_raw.py P02` before the Drive zips are re-packed: `pack_driv
 fingers pinned by clicks, the right pinch still re-record matters much less (it was wanted to constrain exactly
 these lengths); the two left re-records are still needed for coverage. The wrist's 20–26 mm click error is
 probably the same landmark issue (a clicked wrist is a skin crease, MANO's is the joint centre).
+
+## P02 re-records, 2026-11-20 (partial)
+
+Night takes: left wrist rotation `002354` usable (cam_A labels "left" in 481 frames, but 44 FPS, so thin); left
+grasping object `002545` failed again (cam_A saw no hand); right pinch still `002722` good on both cameras. The
+grasping take still needs re-recording.
+
+**The cameras moved since the afternoon boards.** The closing board `002809` (rotation 92.3° vs 88.6–89.8°)
+gives hand gaps of 2.55 / 2.66 mm on the two good takes; both 2026-11-19 boards give 8.8–8.9 mm and fail. The
+closing board is what saved these takes, so it stays mandatory at the end of every sitting. Both takes are pinned
+to `002809`, which is also the current `rig.json`.
+
+### P02 shapes refit from clicks (2026-11-20)
+
+Both shapes refit with triangulated-click constraints only (no ruler numbers); the right hand also gets the new
+pinch still `002722` as a fifth still pose.
+
+| P02 | thumb | index | middle | ring | little | palm | surface fit |
+|---|---|---|---|---|---|---|---|
+| left, clicked target | 113.6 | 86.8 | 90.7 | 84.2 | 62.4 | 69.2 | |
+| left, new shape | 113.5 | 90.3 | 88.0 | 83.8 | 64.1 | 68.8 | **2.04 mm** (was 2.37) |
+| right, clicked target | 111.8 | 87.5 | 92.5 | 84.1 | 67.5 | 73.7 | |
+| right, new shape | 109.8 | 89.3 | 89.7 | 88.0 | 72.9 | 73.7 | **2.35 mm** (was 2.52) |
+
+The point cloud never sees the clicks, and it fits the click-constrained shapes *better* on both hands — an
+independent confirmation that the ruler-constrained shapes were wrong. Right ring and little land 4–5 mm over
+their click targets (the fit weighs clicks against the cloud); everything else is within 3.5 mm.
+
+All 25 P02 sessions (23 + the two 2026-11-20 takes) re-packed with the new betas for one Kaggle run.
+
+### process.py no longer defaults the person and hand
+
+Run without flags, `process.py` wrote both 2026-11-20 takes as **P01, left** (its old defaults), although the
+notes say P02. The right pinch was then searched for left-hand LeapC joints, found none, and was refused by the
+new pack guard; the wrist rotation packed "successfully" with **P01's** hand shape — wrong, and silent. Now the
+person and hand are read from each session's notes ("P02 left wrist rotation"); `--person` / `--hand` override
+them, a session whose notes contradict the flags is refused, and so is one whose notes name neither (no default).
+A batch mixing people or hands gets each shape fitted from its own stills. Both rows corrected in dataset.json.

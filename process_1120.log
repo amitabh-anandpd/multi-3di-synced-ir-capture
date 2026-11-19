@@ -1,0 +1,13 @@
+== 2026-11-20_002354  'P02 left wrist rotation'
+   groups kept: 1187 of 1334 reference frames (89.0 %);  fps cam_A 44.5, cam_B 45.1   (below 85: Ultraleap Control Panel open?)
+   fused 396 frames (every 3), 26474 points/frame; rig check: gap 2.42 mm, overlap 49 % -> OK
+== 2026-11-20_002722  'P02 right pinch still'
+   groups kept: 982 of 1082 reference frames (90.8 %);  fps cam_A 72.1, cam_B 72.4   (below 85: Ultraleap Control Panel open?)
+   fused 328 frames (every 3), 26439 points/frame; rig check: gap 3.08 mm, overlap 82 % -> FAILED
+   NOT packed: the cameras' clouds disagree by 3.08 mm (> 3.0). If the cameras moved, record a board session and run calib_rig.py on it, then process.py again.
+   sessions/2026-11-20_002354: 336 frames (142 with LeapC joints) -> fit_inputs\2026-11-20_002354.npz (5 MB)
+   done in 6.6 min
+
+packed 1: ['2026-11-20_002354']
+NOT packed 1: ['2026-11-20_002722']
+next: upload these fit_inputs/<session>.npz files as a Kaggle dataset, run fit_kaggle.ipynb, download params.zip into fit_inputs/, then: python finish.py

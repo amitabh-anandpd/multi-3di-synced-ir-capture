@@ -1166,6 +1166,38 @@
    "evaluation": "fit_inputs\\evaluation_20261119_0902.json",
    "drive_zip": "drive_upload\\2026-11-18_232832.zip",
    "drive_zip_mb": 172
+  },
+  "2026-11-20_002354": {
+   "person": "P02",
+   "hand": "left",
+   "notes": "P02 left wrist rotation",
+   "fps": {
+    "cam_A": 44.5,
+    "cam_B": 45.1
+   },
+   "rig_board": "sessions/2026-11-20_002809",
+   "rig_gap_mm": 2.42,
+   "rig_overlap_pct": 49,
+   "fused_frames": 396,
+   "fused_every": 3,
+   "rig_refined": false,
+   "fit_input": "fit_inputs\\2026-11-20_002354.npz"
+  },
+  "2026-11-20_002722": {
+   "person": "P02",
+   "hand": "right",
+   "notes": "P02 right pinch still",
+   "fps": {
+    "cam_A": 72.1,
+    "cam_B": 72.4
+   },
+   "rig_board": "sessions/2026-11-20_002809",
+   "rig_gap_mm": 1.41,
+   "rig_overlap_pct": 84,
+   "fused_frames": 328,
+   "fused_every": 3,
+   "rig_refined": true,
+   "fit_input": "fit_inputs\u00826-11-20_002722.npz"
   }
  }
 }
