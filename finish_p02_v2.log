@@ -1,0 +1,134 @@
+using fit_inputs/kaggle_p02/params.zip (2026-11-20 03:39)
+2026-11-18_225543: 289 frames, smoothed (sigma 2): point-to-mesh 1.98 mm, jitter 0.18
+2026-11-18_225905: 272 frames, smoothed (sigma 2): point-to-mesh 1.97 mm, jitter 0.13
+2026-11-18_225942: 282 frames, smoothed (sigma 2): point-to-mesh 2.21 mm, jitter 0.36
+2026-11-18_230057: 282 frames, smoothed (sigma 2): point-to-mesh 2.09 mm, jitter 0.30
+2026-11-18_230240: 714 frames, smoothed (sigma 1): point-to-mesh 2.15 mm, jitter 1.46
+2026-11-18_230412: 815 frames, smoothed (sigma 1): point-to-mesh 2.14 mm, jitter 0.87
+2026-11-18_230522: 798 frames, smoothed (sigma 1): point-to-mesh 2.06 mm, jitter 0.82
+2026-11-18_231151: 826 frames, smoothed (sigma 1): point-to-mesh 2.20 mm, jitter 1.22
+2026-11-18_231235: 1080 frames, smoothed (sigma 1): point-to-mesh 2.35 mm, jitter 1.64, 1 palm/back switches
+2026-11-18_231331: 604 frames, smoothed (sigma 1): point-to-mesh 2.86 mm, jitter 4.63, 20 palm/back switches
+2026-11-18_231533: 403 frames, smoothed (sigma 2): point-to-mesh 2.09 mm, jitter 0.29
+2026-11-18_231629: 248 frames, smoothed (sigma 2): point-to-mesh 2.08 mm, jitter 0.20
+2026-11-18_231702: 227 frames, smoothed (sigma 2): point-to-mesh 2.28 mm, jitter 0.59
+2026-11-18_232040: 239 frames, smoothed (sigma 2): point-to-mesh 2.21 mm, jitter 0.23
+2026-11-18_232110: 375 frames, smoothed (sigma 2): point-to-mesh 2.14 mm, jitter 0.37
+2026-11-18_232235: 773 frames, smoothed (sigma 1): point-to-mesh 2.37 mm, jitter 1.92
+2026-11-18_232323: 763 frames, smoothed (sigma 1): point-to-mesh 2.31 mm, jitter 1.14
+2026-11-18_232413: 753 frames, smoothed (sigma 1): point-to-mesh 2.21 mm, jitter 0.98
+2026-11-18_232512: 761 frames, smoothed (sigma 1): point-to-mesh 2.36 mm, jitter 2.92, 10 palm/back switches
+2026-11-18_232605: 167 frames, smoothed (sigma 1): point-to-mesh 3.11 mm, jitter 3.84, 11 palm/back switches
+2026-11-18_232701: 686 frames, smoothed (sigma 1): point-to-mesh 2.29 mm, jitter 1.45
+2026-11-18_232747: 1246 frames, smoothed (sigma 1): point-to-mesh 2.31 mm, jitter 1.49
+2026-11-18_232832: 602 frames, smoothed (sigma 1): point-to-mesh 3.05 mm, jitter 4.57, 21 palm/back switches
+2026-11-20_002354: 336 frames, smoothed (sigma 1): point-to-mesh 2.71 mm, jitter 5.14, 15 palm/back switches
+2026-11-20_002722: 263 frames, smoothed (sigma 2): point-to-mesh 1.99 mm, jitter 0.23, 1 palm/back switches
+
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+WARNING: You are using a MANO model, with only 10 shape coefficients.
+
+session pose           frames surface mm   p90 speed mm/s  jitter vs LeapC mm  centred
+225543  P02 left open still    145       1.97  2.06         20    0.16        18.6      1.3
+225905  P02 left fist still    136       1.97  2.02         13    0.12        20.4      1.1
+225942  P02 left pinch still    141       2.21  2.65         89    0.35        20.1      5.9
+230057  P02 left spread still    141       2.10  2.32         56    0.29        16.5      4.5
+230240  P02 left open close slow    357       2.11  2.37        210    1.52        16.4      7.9
+230412  P02 left finger counting    408       2.13  2.39        111    0.84        17.8      7.4
+230522  P02 left pinches each finger    399       2.05  2.27         89    0.80        20.0      6.9
+231151  P02 left free slow    413       2.20  2.52        188    1.18        17.1      7.8
+231235  P02 left free fast    540       2.37  2.72        349    1.54        16.0      8.0
+231331  P02 left edge of view    302       2.87  8.54        421    4.44        21.1     22.7
+231533  P02 left point still    202       2.09  2.20         41    0.26        17.9      2.3
+231629  P02 right open still    124       2.08  2.21         22    0.18        14.8      1.5
+231702  P02 right fist still    114       2.28  2.55         78    0.56        16.1      5.7
+232040  P02 right spread still    120       2.21  2.36         42    0.20        17.3      2.4
+232110  P02 right point still    188       2.17  2.72         52    0.33        16.0      6.2
+232235  P02 right open close slow    387       2.37  2.92        219    1.63        15.5     10.8
+232323  P02 right finger counting    382       2.31  2.50        115    1.10        16.2      7.7
+232413  P02 right pinches each finger    377       2.21  2.46        125    0.89        16.2      6.6
+232512  P02 right wrist rotation    381       2.33  2.62        223    2.71        19.5     13.7
+232605  P02 right grasping object     84       2.88  5.11        306    3.93        20.5     17.9
+232701  P02 right free slow    343       2.28  2.64        181    1.39        16.2     10.2
+232747  P02 right free fast    623       2.31  2.65        371    1.42        16.7      9.2
+232832  P02 right edge of view    301       2.99  5.25        407    4.16        17.9     15.5
+002354  P02 left wrist rotation    168       2.70  3.54        208    4.98        19.2     16.6
+002722  P02 right pinch still    132       1.98  2.61         30    0.20        15.1      3.6
+
+by hand speed (95th-percentile joint speed):
+      0-50 mm/s:  1164 frames, surface 2.05 mm (p90 2.23), vs LeapC centred 2.9 mm
+    50-150 mm/s:  2015 frames, surface 2.18 mm (p90 2.43), vs LeapC centred 7.3 mm
+   150-400 mm/s:  2557 frames, surface 2.32 mm (p90 2.78), vs LeapC centred 9.2 mm
+      400+ mm/s:  1172 frames, surface 2.56 mm (p90 4.67), vs LeapC centred 10.9 mm
+
+MANO vs LeapC by joint type, all sessions (raw / mean offset removed per session), mm:
+  wrist                            7.5 /   4.0
+  knuckle (MCP; thumb CMC)        16.1 /   5.9
+  middle joint (PIP; thumb MCP)   14.8 /   7.4
+  end joint (DIP; thumb IP)       17.5 /   8.6
+  tip                             27.0 /  15.1
+
+worst frames (surface distance):
+  231331 P02 left edge of view frame 36854: 290.41 mm at 1043 mm/s
+  231331 P02 left edge of view frame 36367: 234.99 mm at 1076 mm/s
+  231331 P02 left edge of view frame 36842: 121.79 mm at 893 mm/s
+  231331 P02 left edge of view frame 36168: 96.78 mm at 1274 mm/s
+  231331 P02 left edge of view frame 36374: 89.91 mm at 1354 mm/s
+  231331 P02 left edge of view frame 38110: 66.03 mm at 2969 mm/s
+  231331 P02 left edge of view frame 36848: 61.23 mm at 838 mm/s
+  231331 P02 left edge of view frame 38122: 46.36 mm at 3087 mm/s
+
+wrote fit_inputs\evaluation_20261120_0354.json
+2026-11-18_225543: 289 labelled pairs -> drive_upload\2026-11-18_225543.zip (87 MB)
+2026-11-18_225905: 272 labelled pairs -> drive_upload\2026-11-18_225905.zip (81 MB)
+2026-11-18_225942: 282 labelled pairs -> drive_upload\2026-11-18_225942.zip (83 MB)
+2026-11-18_230057: 282 labelled pairs -> drive_upload\2026-11-18_230057.zip (83 MB)
+2026-11-18_230240: 714 labelled pairs -> drive_upload\2026-11-18_230240.zip (212 MB)
+2026-11-18_230412: 815 labelled pairs -> drive_upload\2026-11-18_230412.zip (241 MB)
+2026-11-18_230522: 798 labelled pairs -> drive_upload\2026-11-18_230522.zip (234 MB)
+2026-11-18_231151: 826 labelled pairs -> drive_upload\2026-11-18_231151.zip (243 MB)
+2026-11-18_231235: 1080 labelled pairs -> drive_upload\2026-11-18_231235.zip (317 MB)
+2026-11-18_231331: 604 labelled pairs -> drive_upload\2026-11-18_231331.zip (180 MB)
+2026-11-18_231533: 403 labelled pairs -> drive_upload\2026-11-18_231533.zip (117 MB)
+2026-11-18_231629: 248 labelled pairs -> drive_upload\2026-11-18_231629.zip (75 MB)
+2026-11-18_231702: 227 labelled pairs -> drive_upload\2026-11-18_231702.zip (65 MB)
+2026-11-18_232040: 239 labelled pairs -> drive_upload\2026-11-18_232040.zip (71 MB)
+2026-11-18_232110: 375 labelled pairs -> drive_upload\2026-11-18_232110.zip (108 MB)
+2026-11-18_232235: 773 labelled pairs -> drive_upload\2026-11-18_232235.zip (228 MB)
+2026-11-18_232323: 763 labelled pairs -> drive_upload\2026-11-18_232323.zip (222 MB)
+2026-11-18_232413: 753 labelled pairs -> drive_upload\2026-11-18_232413.zip (218 MB)
+2026-11-18_232512: 761 labelled pairs -> drive_upload\2026-11-18_232512.zip (216 MB)
+2026-11-18_232605: 167 labelled pairs -> drive_upload\2026-11-18_232605.zip (50 MB)
+2026-11-18_232701: 686 labelled pairs -> drive_upload\2026-11-18_232701.zip (202 MB)
+2026-11-18_232747: 1246 labelled pairs -> drive_upload\2026-11-18_232747.zip (361 MB)
+2026-11-18_232832: 602 labelled pairs -> drive_upload\2026-11-18_232832.zip (172 MB)
+2026-11-20_002354: 336 labelled pairs -> drive_upload\2026-11-20_002354.zip (101 MB)
+2026-11-20_002722: 263 labelled pairs -> drive_upload\2026-11-20_002722.zip (77 MB)
+
+
+12 zip(s) packed before the "side" key (prose is correct; re-pack when convenient): 2026-11-06_035647, 2026-11-06_035726, 2026-11-06_035752, 2026-11-06_035809, ...
+47 of 47 zips OK in drive_upload
+next: drag these drive_upload/*.zip into the shared Drive's sessions/ folder

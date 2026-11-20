@@ -44,6 +44,9 @@ COLORS = {"wrist": (255, 255, 255), "THUMB": (0, 0, 255), "INDEX": (0, 200, 0), 
 ap = argparse.ArgumentParser()
 ap.add_argument("--sessions", nargs="*", help="default: every fitted session in dataset.json")
 ap.add_argument("--per", type=int, default=2, help="frames per session per camera")
+ap.add_argument("--switches", type=int, metavar="N",
+                help="PLAN.md P0: instead of --per, take up to N palm/back flips per session (orientation step > 90 deg "
+                     "in the raw fit, as fit_mano.py counts them) and show the frame just before and just after each")
 ap.add_argument("--redo", action="store_true", help="also show frames already clicked")
 ap.add_argument("--list", action="store_true", help="only list the frames")
 args = ap.parse_args()
@@ -58,8 +61,17 @@ for s in sessions:
     path = os.path.join("sessions", s)
     fitted = np.load(os.path.join(path, "mano", "smoothed.npz"))["frames"].astype(int)
     a2b = {g["frames"]["cam_A"]: g["frames"]["cam_B"] for g in json.load(open(os.path.join(path, "groups.json")))["groups"]}
-    for k, frac in enumerate(np.linspace(0.2, 0.8, args.per)):
-        fa = int(fitted[int(frac * (len(fitted) - 1))])
+    if args.switches:
+        from scipy.spatial.transform import Rotation
+        raw = np.load(os.path.join(path, "mano", "params.npz"))
+        rot = Rotation.from_rotvec(raw["orient"])
+        cut = np.nonzero(np.degrees((rot[:-1].inv() * rot[1:]).magnitude()) > 90)[0]  # flip between k and k + 1
+        cut = cut[np.linspace(0, len(cut) - 1, min(args.switches, len(cut))).round().astype(int)] if len(cut) else cut
+        picks = [int(raw["frames"][k + d]) for k in cut for d in (0, 1)]  # before, after
+        picks = [f for f in picks if f in set(fitted.tolist())]
+    else:
+        picks = [int(fitted[int(frac * (len(fitted) - 1))]) for frac in np.linspace(0.2, 0.8, args.per)]
+    for fa in picks:
         for cam in ("cam_A", "cam_B"):
             fid = fa if cam == "cam_A" else a2b.get(fa)
             if fid is None:

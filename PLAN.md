@@ -287,21 +287,56 @@ every session.
 Open phase-2 items (N0 +1 % size, N1 corner residual 2.7 mm, N4 mask IoU 0.86) are reopened only if P2 shows
 they limit the labels.
 
-## Phase 3 status (2026-11-17)
+## Phase 3 status and plan (2026-11-20)
 
-- P0: the repair stays off. Propagation shifts now reach ±128 frames (fit_batch.py SHIFTS); tested 2026-11-17: 232756 8→4 switches, 103904 unchanged; the two excluded
-  wrist-rotation sessions (232756 left, 103904 right) are packed for a Kaggle test. Exit (worst frame ≤ 5 mm, switches
-  gone) not yet checked.
-- P1: rig_check, per-session rigs and `process.py --refine` done. A rigid camera base is still open.
-- P2: done. 99 clicked frames, both hands: MANO 10.9 mm vs LeapC 14.2 mm (median, all joints); finger lengths within
-  3.5 mm of the clicks except the thumb (-7.9 mm). Fingertips are not corrected (edge inflation +5–8 mm tested, not applied).
-- P3: done (process.py, finish.py, dataset.py).
-- P4: 2 people (P01, P02), both hands each. **45 active sessions, 25,633 labelled frames.** P01: 22 sessions,
-  12,428 frames, median surface 2.45 mm, on the Drive. P02 (2026-11-18, fitted 2026-11-19): 23 sessions,
-  13,205 frames, median surface 2.37 mm — the better of the two sittings, and its worst session (3.12 mm) beats
-  P01's worst (3.80 mm). 5 excluded overall; 3 P02 sessions to be re-recorded.
-  Open: 3 more people. Shapes are fitted with
-  `fit_mano.py --shape ... --click-lengths I M R P --thumb-mm T --palm-mm W` once the person's clicks and ruler numbers exist.
-- P5: teammate. Needs the 45 zips in drive_upload/ on the shared Drive (22 P01 + 23 P02, 7.3 GB; excluded
-  sessions are not packed).
-- P6: 46 GB of unreferenced raw sessions deleted; 44 session folders remain.
+### Where it stands
+
+| | state | evidence |
+|---|---|---|
+| P0 palm/back flips | **open** | 85 flips (P01 6, P02 79), mostly edge of view, grasping, wrist rotation. Repair still off. `tools/click_joints.py --switches N` (2026-11-20) shows the frames either side of each flip, ready to click. |
+| P1 rig | done, base still loose | Per-session rigs, `rig_check`, `--refine`, closing board. The cameras moved overnight 11-19 -> 11-20: the afternoon boards give 8.9 mm on the night takes, the closing board 2.6 mm. |
+| P2 label quality | **done** | 191 clicked frames: MANO 11.0 mm vs LeapC 14.3 mm; fingertip 9.0 vs 18.6. Wrist is the weak joint (P02 15.7 / 21.8 mm after the refit): open whether model or click landmark. |
+| P3 one command per step | done, hardened | Pack refuses inputs with no LeapC joints; `pack_drive.py --verify`, run by `finish.py`; `process.py` takes person and hand from the notes, no default. |
+| P4 people | **2 of 5** | 47 sessions, 26,232 frames. P01 22 / 12,428 / 2.45 mm. P02 25 / 13,804 / 2.21 mm, after refitting its shapes from triangulated clicks (surface L 2.37 -> 2.04, R 2.52 -> 2.35; closer to the clicks at every joint type). |
+| P5 baseline model | blocked on P4 | Validation on unseen people needs >= 3 people. |
+| P6 disk | **22 GB free** (< 50 GB floor) | P01 and the old boards moved to `sessions/archive 1` (48.6 GB) and zipped to `archive 1.zip` (27.2 GB); the index matches file for file. P01's tools paths are gone until extracted. |
+
+Rules learned, which every later step follows:
+- **Shapes from triangulated clicks only.** Ruler and tracing numbers measure skin landmarks, MANO joint centres;
+  P02's ruler palm (85 vs clicked 69-74 mm) shortened every finger 3-10 mm.
+- **A board at the start and at the end of every sitting.** Only the closing board fitted the 2026-11-20 takes.
+- **Record with the laptop plugged in and nothing copying or syncing.** 2026-11-20 ran at 44-76 FPS instead of 85-89.
+- **Check each take's side before the person leaves:** left takes need cam_A `type` = left, right takes cam_B = right.
+
+### Plan, in order
+
+**A. Now, without Ravi**
+1. Disk: when the CRC check of `archive 1.zip` passes, delete the `sessions/archive 1` folder (keeps the zip;
+   frees ~46 GB, to ~68 GB). Make sure the zip also exists off this laptop (OneDrive shows it synced, or a copy on a
+   drive): on the same disk it is not a backup.
+2. Upload the 24 P02 zips to the shared Drive (all except `2026-11-20_002354`, the thin left wrist rotation:
+   15 flips, 142 of 336 frames with LeapC joints). Tell the teammate `dataset.json`'s `hand` is the side to use.
+3. P0 clicks: `python tools/click_joints.py --switches 1` (short first pass), then
+   `python tools/eval_clicks.py --person P02`. If the clicks clearly pick one side at each flip, build the repair
+   on that; if the error is the same both sides, the flips hardly move the joints and the repair is not worth it.
+
+**B. Next sitting with Ravi (~5 min)**
+4. Opening board; `P02 left grasping object` (required: start without the object so cam_A locks on);
+   `P02 left wrist rotation` (retake); closing board. Then `process.py` (no flags), one small Kaggle run,
+   `finish.py`, upload. If the retake is good, mark `002354` excluded.
+
+**C. Before P03**
+5. A rigid camera base (P1's last item): the cameras moved twice in two days; each move costs a board and puts
+   a sitting at risk.
+6. Cut one Kaggle round per person: make clicking work on fused frames before any fit (the clicked lengths and palm
+   width need no MANO), so a new person's shape is fitted from clicks first and fitted on Kaggle once.
+7. Disk room for ~22 GB of raw per sitting: archive each person once their zips are verified on the Drive.
+
+**D. P03-P05 (each ~10 min recording + processing)**
+8. Per person: opening board, per hand 5 stills + 8 motions, closing board; side check per take; click; shape
+   from clicks; one Kaggle run; upload. No ruler.
+9. P5: from three people the teammate can validate on a held-out person (exit: below Ultraleap's error on the
+   same frames).
+
+**Later:** the wrist question (clicked crease vs MANO joint centre); P01's 12 left zips lack the `side` key
+(prose correct; re-pack only if the zip is extracted anyway).
