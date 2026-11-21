@@ -130,6 +130,9 @@ for s in args.sessions:
                       "no PCA)",
             "side": side,  # load MANO with is_rhand=(side == "right"); left and right are mirror images
             "joint_order": "MANO 16 joints + 5 tips (thumb, index, middle, ring, pinky tip as 16..20)",
+            "flip_dist": "smoothed.npz['flip_dist'] (when present): per frame, fitted steps to the nearest palm/back "
+                         "flip of the fit, -1 = the session has none. Labels near a flip are worse (vs hand-clicked "
+                         "joints: 31 mm at 0-1 steps, 21 mm at 2-20, 8-13 mm beyond): drop 0-1, consider <= 20",
             "rig": f"rig.json = cam_B in cam_A's frame, from {rig}",
             "frames": "only frame pairs with a MANO label are kept; groups.json pairs cam_A and cam_B frame ids"}, indent=1))
         for c in ("cam_A", "cam_B"):

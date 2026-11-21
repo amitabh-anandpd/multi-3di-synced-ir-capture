@@ -47,6 +47,10 @@ ap.add_argument("--per", type=int, default=2, help="frames per session per camer
 ap.add_argument("--switches", type=int, metavar="N",
                 help="PLAN.md P0: instead of --per, take up to N palm/back flips per session (orientation step > 90 deg "
                      "in the raw fit, as fit_mano.py counts them) and show the frame just before and just after each")
+ap.add_argument("--flip-band", type=int, nargs=2, metavar=("LO", "HI"),
+                help="P0: frames LO..HI fitted steps from the nearest palm/back flip (--per of them per session, "
+                     "spread evenly), to measure how far a flip's error reaches. Sessions without flips are skipped")
+ap.add_argument("--cam", choices=["cam_A", "cam_B"], help="click only this camera (half the frames)")
 ap.add_argument("--redo", action="store_true", help="also show frames already clicked")
 ap.add_argument("--list", action="store_true", help="only list the frames")
 args = ap.parse_args()
@@ -69,10 +73,25 @@ for s in sessions:
         cut = cut[np.linspace(0, len(cut) - 1, min(args.switches, len(cut))).round().astype(int)] if len(cut) else cut
         picks = [int(raw["frames"][k + d]) for k in cut for d in (0, 1)]  # before, after
         picks = [f for f in picks if f in set(fitted.tolist())]
+    elif args.flip_band:
+        from scipy.spatial.transform import Rotation
+        raw = np.load(os.path.join(path, "mano", "params.npz"))
+        rot = Rotation.from_rotvec(raw["orient"])
+        cut = np.nonzero(np.degrees((rot[:-1].inv() * rot[1:]).magnitude()) > 90)[0]
+        if not len(cut):
+            continue
+        # steps from the nearest flip: a flip between k and k + 1 is 0 steps from both
+        d = np.array([min(np.min(np.abs(cut - i)), np.min(np.abs(cut + 1 - i))) for i in range(len(raw["frames"]))])
+        lo, hi = args.flip_band
+        ok = np.nonzero((d >= lo) & (d <= hi))[0]
+        ok = ok[np.linspace(0, len(ok) - 1, min(args.per, len(ok))).round().astype(int)] if len(ok) else ok
+        picks = [int(raw["frames"][i]) for i in ok if int(raw["frames"][i]) in set(fitted.tolist())]
     else:
         picks = [int(fitted[int(frac * (len(fitted) - 1))]) for frac in np.linspace(0.2, 0.8, args.per)]
     for fa in picks:
         for cam in ("cam_A", "cam_B"):
+            if args.cam and cam != args.cam:
+                continue
             fid = fa if cam == "cam_A" else a2b.get(fa)
             if fid is None:
                 continue

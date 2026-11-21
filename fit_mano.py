@@ -208,6 +208,21 @@ def init_from_leap(hand, betas, lj, iters=300):
     return orient.detach(), pose.detach(), transl.detach()
 
 
+def flip_dist(orient):
+    """Per fitted frame: steps to the nearest palm/back flip (orientation step > 90 deg), -1 if the session has none.
+
+    PLAN.md P0, 2026-11-21 clicks (P02): label error vs the clicked joints is 30.7 mm at 0-1 steps, 21.2 at 2-20,
+    12.5 beyond, 7.9 mm in sessions without flips. Saved in smoothed.npz so training can drop or down-weight frames
+    near a flip (no repair rule is justified yet)."""
+    from scipy.spatial.transform import Rotation
+    rot = Rotation.from_rotvec(orient)
+    cut = np.nonzero(np.degrees((rot[:-1].inv() * rot[1:]).magnitude()) > 90)[0]  # flip between k and k + 1
+    if not len(cut):
+        return np.full(len(orient), -1, np.int32)
+    i = np.arange(len(orient))[:, None]
+    return np.minimum(np.abs(i - cut[None]), np.abs(i - cut[None] - 1)).min(1).astype(np.int32)
+
+
 def unwrap_rotvec(x):
     """(n, 3k) axis-angle vectors over time -> the same rotations, written continuously.
 
@@ -389,7 +404,7 @@ if __name__ == "__main__":
             print(f"{name}: point-to-mesh median {np.median(d):.2f} mm; jitter median {np.median(acc):.2f}, "
                   f"p95 {np.percentile(acc, 95):.2f} mm/frame^2")
         np.savez_compressed(os.path.join(out, "smoothed.npz"), frames=fr, joints=J, betas=betas.numpy(),
-                            sigma=args.post, **sm)
+                            sigma=args.post, flip_dist=flip_dist(z["orient"]), **sm)
         allp = np.vstack([fused[int(f)] for f in fr[::10]])
         center = np.median(allp, 0)
         scale = 480 * 0.8 / max(np.percentile(np.abs(allp - center), 98, axis=0).max() * 2, 1)

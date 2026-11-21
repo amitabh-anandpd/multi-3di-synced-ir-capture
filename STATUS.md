@@ -1104,3 +1104,62 @@ new pack guard; the wrist rotation packed "successfully" with **P01's** hand sha
 person and hand are read from each session's notes ("P02 left wrist rotation"); `--person` / `--hand` override
 them, a session whose notes contradict the flags is refused, and so is one whose notes name neither (no default).
 A batch mixing people or hands gets each shape fitted from its own stills. Both rows corrected in dataset.json.
+
+## P0 first look: flips are not harmless (2026-11-21)
+
+18 of 28 flip frames clicked (`click_joints.py --switches 1`: the frame just before and just after one flip per
+session, both cameras). That is **5 distinct flips** (231235, 232512, 232832, 002354, 002722; 8 camera pairs, which
+are not independent). `eval_clicks.py --person P02 --out labels/joints/eval_p02.json` gives per-frame errors.
+
+- **Joints do move at a flip.** Neighbouring frames either side of a flip differ by 40–99 mm mean joint distance in
+  the labels (the plan assumed "the joints change little at a switch"). A flip is a wrong-side label, not a cosmetic one.
+- **Error at flip frames is large**: median 43.5 mm on the "before" frame, 21.2 mm on the "after" (typical frame
+  ~11 mm). In 4 of the 5 flips the "after" side is closer to the clicks; the fifth (232832, right edge of view) is
+  bad on both sides (72 / 68 mm: the hand is barely seen).
+- **LeapC cannot arbitrate.** In 2 of the 5 flips (231235, 002354) neither frame has LeapC joints, since a flip
+  happens where LeapC lost the hand. Where it exists, "closer to LeapC" agreed with the clicks once (002722),
+  disagreed once (232512) and was uninformative once (232832). So that rule is not usable.
+
+Too few flips to decide a repair rule (5, with a direction that may simply reflect stretch lengths). Next: the remaining
+10 frames, then `--switches 3`; also click mid-stretch frames to see whether the error is only at the flip or
+along whole wrong-side stretches. If it is whole stretches, a per-frame quality flag in the packed labels (so
+training can drop them) is a safer first step than a repair.
+
+### P0 second look: 134 clicked P02 frames, 11 distinct flips (2026-11-21)
+
+- Error is **concentrated at the flips**: frames adjacent to a flip (0-1 fitted steps) median **30.7 mm** (43 frames,
+  p90 49); frames 21+ steps from any flip median **8.4 mm** (87 frames, p90 18). No clicked frames fall 2-5 steps
+  out, only 4 at 6-20, so how far the damage reaches is **not yet measured**.
+- In 17 of 20 before/after camera pairs (11 distinct flips; pairs from one flip are not independent) the "after"
+  frame is closer to the clicks (before 41.4 mm, after 22.8 mm): the stretch before a flip looks systematically worse.
+  Unexplained; may point at how fit_batch.py propagates between chunks.
+- Share of P02's 13,804 frames near a flip: within 1 step 206 (1.5 %), within 5 steps 613 (4.4 %), within 20 steps
+  1,529 (11.1 %). Worst sessions: 232605 right grasping (46 % within 5 steps), 002354 left wrist rotation (38 %),
+  232832 right edge of view (30 %).
+
+Proposal, not done: add a per-frame `near_flip` flag (distance in fitted steps to the nearest flip) to the packed
+labels so training can drop or down-weight those frames, rather than repair by a rule that cannot yet be justified.
+Cost: 1.5-4.4 % of frames. Needs clicks at 2-5 and 6-20 steps from a flip first, to pick the cutoff.
+
+### P0 third look and the `flip_dist` flag (2026-11-21)
+
+35 more clicks (cam_A, `click_joints.py --flip-band 2 5` and `--flip-band 6 20`); 169 clicked P02 frames in all.
+Error vs the clicks, separating flip distance from how hard the session is:
+
+| frames | n | median | p90 |
+|---|---|---|---|
+| flipping sessions, 0-1 steps from a flip | 43 | 30.7 mm | 49.3 |
+| flipping sessions, 2-20 steps | 39 | 21.2 mm | 62.8 |
+| flipping sessions, 21+ steps | 15 | 12.5 mm | 40.1 |
+| sessions with no flip | 72 | 7.9 mm | 15.6 |
+
+Two effects: the 7 flipping sessions (edge of view, grasping, wrist rotation, free fast, the new pinch) are harder
+throughout, and within them the error falls with distance from a flip without a clean cutoff. In 6 of 7 sessions
+the frames at a flip are worse than those away from one; the left wrist rotation `002354` is bad throughout (31 mm
+away from flips too), which supports keeping it off the Drive.
+
+Decision: no repair; a per-frame flag. `fit_mano.py --post` now writes `flip_dist` into `smoothed.npz` (fitted steps
+to the nearest flip, -1 = none; `flip_dist()` in fit_mano.py), and `label_info.json` explains it with the advice
+"drop 0-1, consider <= 20" (1.5 % and 11.1 % of P02's frames). Existing P02 smoothed.npz files were patched with the
+same function (flip counts cross-checked against dataset.json: exact) and the P02 zips re-packed. P01's zips do not
+have the key (its sessions are in archive 1.zip; P01 has 6 flips); consumers must treat a missing key as unknown.

@@ -25,6 +25,7 @@ import argparse  # noqa: E402
 ap = argparse.ArgumentParser()
 ap.add_argument("--person", help="only sessions of this person in dataset.json (e.g. P02)")
 ap.add_argument("--hand", choices=["left", "right"], help="only sessions of this hand")
+ap.add_argument("--out", help="write the per-frame results of a filtered run here (eval.json itself stays untouched)")
 args = ap.parse_args()
 FILTERED = bool(args.person or args.hand)
 _rows = json.load(open("dataset.json"))["sessions"] if FILTERED else {}
@@ -112,6 +113,10 @@ for key in sorted({(r["session"], r["cam"]) for r in rows}):
     print(f"  {key[0]} {key[1]}: {med(rs, 'mano_mm', allj)[0]:.1f} mm  (LeapC {med(rs, 'leap_mm', allj)[0]:.1f})  "
           f"[{len(rs)} frames]")
 if FILTERED:  # a subset must not overwrite the full-dataset results other tools read
+    if args.out:
+        json.dump({"summary": summary, "frames": [{k: (v.tolist() if isinstance(v, np.ndarray) else v)
+                                                   for k, v in r.items()} for r in rows]}, open(args.out, "w"))
+        print(f"\nwrote {args.out}")
     print("\n(filtered run: eval.json / eval_3d.json left as they were)")
 else:
     json.dump({"summary": summary, "frames": [{k: (v.tolist() if isinstance(v, np.ndarray) else v)
