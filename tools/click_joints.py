@@ -3,6 +3,8 @@
   python tools/click_joints.py                  # 2 frames per camera from every fitted session in dataset.json
   python tools/click_joints.py --per 3
   python tools/click_joints.py --list           # only show which frames would come up
+  python tools/click_joints.py --person P03 --hand left --still --per 3   # a new person, BEFORE the first fit:
+                                                # then tools/click_shape.py --person P03 --hand left --fit
 
 Shows the rectified left IR image of one camera, zoomed on the hand. Click the joints in the order shown at the top:
 wrist, then thumb (base, middle knuckle, end knuckle, tip), index, middle, ring, little (knuckle, middle joint, end
@@ -43,6 +45,11 @@ COLORS = {"wrist": (255, 255, 255), "THUMB": (0, 0, 255), "INDEX": (0, 200, 0), 
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--sessions", nargs="*", help="default: every fitted session in dataset.json")
+ap.add_argument("--person", help="sessions of this person in dataset.json (fitted or only fused)")
+ap.add_argument("--hand", choices=["left", "right"], help="with --person: only this hand")
+ap.add_argument("--still", action="store_true",
+                help="only sessions whose notes say 'still': a new person's hand is measured from these BEFORE the "
+                     "first fit (then tools/click_shape.py --fit). Skip (s) frames where fingers are hidden, e.g. a fist")
 ap.add_argument("--per", type=int, default=2, help="frames per session per camera")
 ap.add_argument("--switches", type=int, metavar="N",
                 help="PLAN.md P0: instead of --per, take up to N palm/back flips per session (orientation step > 90 deg "
@@ -58,12 +65,27 @@ args = ap.parse_args()
 sessions = args.sessions
 if not sessions:
     d = json.load(open("dataset.json"))["sessions"]
-    sessions = [s for s, r in d.items() if r.get("fit_frames") and os.path.exists(f"sessions/{s}/mano/smoothed.npz")]
+    if args.person or args.hand or args.still:
+        sessions = [s for s, r in sorted(d.items()) if not r.get("exclude")
+                    and (not args.person or r.get("person") == args.person)
+                    and (not args.hand or r.get("hand") == args.hand)
+                    and (not args.still or "still" in (r.get("notes") or "").lower())]
+    else:
+        sessions = [s for s, r in d.items() if r.get("fit_frames") and os.path.exists(f"sessions/{s}/mano/smoothed.npz")]
 print(f"Loading frames from {len(sessions)} sessions...")
 items = []  # (session, cam, frame_id of that camera)
 for s in sessions:
     path = os.path.join("sessions", s)
-    fitted = np.load(os.path.join(path, "mano", "smoothed.npz"))["frames"].astype(int)
+    # frames to choose from: the fitted ones, or before any fit the fused ones (the same frames the fit will label)
+    if os.path.exists(os.path.join(path, "mano", "smoothed.npz")):
+        fitted = np.load(os.path.join(path, "mano", "smoothed.npz"))["frames"].astype(int)
+    elif os.path.exists(os.path.join(path, "fused", "hands.npz")) and not (args.switches or args.flip_band):
+        fz = np.load(os.path.join(path, "fused", "hands.npz"))
+        enough = np.diff(fz["offsets"]) >= 500  # fit_batch.py pack() drops fused frames with fewer points
+        fitted = fz["frames"][:, 0].astype(int)[enough[:len(fz["frames"])]]
+    else:
+        print(f"  {s}: not fused yet (run process.py on it first), skipped")
+        continue
     a2b = {g["frames"]["cam_A"]: g["frames"]["cam_B"] for g in json.load(open(os.path.join(path, "groups.json")))["groups"]}
     if args.switches:
         from scipy.spatial.transform import Rotation

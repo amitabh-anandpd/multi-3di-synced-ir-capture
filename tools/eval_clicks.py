@@ -18,7 +18,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fit_mano import MANO_TO_LEAP, load_shape  # noqa: E402
 from segment import LABELS, Segmenter  # noqa: E402
-from stereo import rig_path  # noqa: E402
+from clicks3d import CHAIN, clicked_pairs, finger_length, palm_width, to_camera, triangulate  # noqa: E402
 
 import argparse  # noqa: E402
 
@@ -41,21 +41,6 @@ def wanted(session):
 
 TYPES = {"wrist": [0], "knuckle": [1, 4, 7, 10, 13], "middle joint": [2, 5, 8, 11, 14],
          "end joint": [3, 6, 9, 12, 15], "tip": [16, 17, 18, 19, 20]}
-
-
-def to_camera(P, session, cam):
-    """(n, 3) points in cam_A's frame -> that camera's frame."""
-    if cam == "cam_A":
-        return P
-    rig = json.load(open(rig_path(session)))
-    Rb, tb = np.array(rig["cameras"]["cam_B"]["R"]), np.array(rig["cameras"]["cam_B"]["t_mm"])
-    rf = os.path.join(session, "fused", "refine.json")
-    R, t = np.eye(3), np.zeros(3)
-    if os.path.exists(rf):
-        r = json.load(open(rf))
-        if r.get("used"):
-            R, t = np.array(r["R"]), np.array(r["t_mm"])
-    return ((P - t) @ R - tb) @ Rb  # inverse of P_A = R (Rb P_B + tb) + t
 
 
 def project(P, unit):
@@ -125,44 +110,17 @@ else:
     print(f"\nwrote {os.path.join(LABELS, 'joints', 'eval.json')}")
 
 # --- 3D: moments clicked in both cameras -> triangulated joints -> 3D error and finger lengths
-CHAIN = {"thumb": [13, 14, 15, 16], "index": [1, 2, 3, 17], "middle": [4, 5, 6, 18], "ring": [10, 11, 12, 19],
-         "little": [7, 8, 9, 20]}
-pairs = {}
-for f in glob.glob(os.path.join(LABELS, "joints", "*", "*", "*.json")):
-    c = json.load(open(f))
-    if not wanted(c["session"]):
-        continue
-    pairs.setdefault((c["session"], c["cam_A_frame"]), {})[c["cam"]] = c
 tri = []
-for (sess, fa), cc in sorted(pairs.items()):
+for (sess, fa), cc in sorted(clicked_pairs(wanted).items()):
     if len(cc) < 2:
         continue
     s = os.path.join("sessions", sess)
-    ua_, ub_ = segs[(s, "cam_A")].unit, segs[(s, "cam_B")].unit
-    # cam_B's centre and its rays in cam_A's frame: to_camera is rigid, P_B = A P_A + c; read A, c off 4 points
-    base = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1.0]]) * 100
-    Bm = to_camera(base, s, "cam_B")
-    # P_B = A @ P_A + c  ->  P_A = A^T (P_B - c)
-    A = (Bm[1:] - Bm[0]).T / 100
-    cvec = Bm[0]
-    oB = A.T @ (-cvec)
     z = np.load(os.path.join(s, "mano", "smoothed.npz"))
     k = np.nonzero(z["frames"].astype(int) == fa)[0]
     if not len(k):
         continue
-    M = z["joints"][k[0]]
-    X = np.full((21, 3), np.nan)
-    for j in range(21):
-        pa, pb = cc["cam_A"]["uv"][j], cc["cam_B"]["uv"][j]
-        if pa is None or pb is None:
-            continue
-        da = np.array([(pa[0] - ua_.cx) / ua_.f, (pa[1] - ua_.cy) / ua_.f, 1.0])
-        db = A.T @ np.array([(pb[0] - ub_.cx) / ub_.f, (pb[1] - ub_.cy) / ub_.f, 1.0])
-        lam = np.linalg.lstsq(np.stack([da, -db], 1), oB, rcond=None)[0]
-        qa, qb = lam[0] * da, oB + lam[1] * db
-        if np.linalg.norm(qa - qb) < 15 and lam[0] > 0 and lam[1] > 0:  # the two rays nearly meet
-            X[j] = (qa + qb) / 2
-    tri.append({"session": sess, "frame": fa, "clicked": X, "mano": M})
+    X = triangulate(s, cc["cam_A"], cc["cam_B"], segs[(s, "cam_A")].unit, segs[(s, "cam_B")].unit)
+    tri.append({"session": sess, "frame": fa, "clicked": X, "mano": z["joints"][k[0]]})
 if tri:
     print(f"\n3D: {len(tri)} moments clicked in both cameras (rays meeting within 15 mm)")
     e3 = np.array([np.linalg.norm(t["clicked"] - t["mano"], axis=1) for t in tri])
@@ -173,13 +131,13 @@ if tri:
             print(f"  {name:<14} MANO vs triangulated clicks: median {np.median(v):5.1f} mm, p90 {np.percentile(v, 90):5.1f}  [{len(v)}]")
     print("  finger length, knuckle (thumb: base) to tip, median over moments where all 4 joints were clicked:")
     lengths = {}
-    for f_, ch in CHAIN.items():
+    for f_ in CHAIN:
         lx, lm = [], []
         for t in tri:
-            X, M = t["clicked"], t["mano"]
-            if np.isfinite(X[ch]).all():
-                lx.append(sum(np.linalg.norm(X[a] - X[b]) for a, b in zip(ch, ch[1:])))
-                lm.append(sum(np.linalg.norm(M[a] - M[b]) for a, b in zip(ch, ch[1:])))
+            x = finger_length(t["clicked"], f_)
+            if x is not None:
+                lx.append(x)
+                lm.append(finger_length(t["mano"], f_))
         if lx:
             d = np.array(lx) - np.array(lm)
             lengths[f_] = {"clicked_mm": float(np.median(lx)), "mano_mm": float(np.median(lm)),
@@ -187,8 +145,7 @@ if tri:
             print(f"    {f_:<7} clicked {np.median(lx):5.1f}  MANO {np.median(lm):5.1f}  difference {np.median(d):+5.1f} mm "
                   f"(p25 {np.percentile(d, 25):+.1f}, p75 {np.percentile(d, 75):+.1f})  [{len(lx)}]")
     # palm width as fit_mano.py --palm-mm defines it: index MCP (1) to little MCP (7)
-    pw = [(np.linalg.norm(t["clicked"][1] - t["clicked"][7]), np.linalg.norm(t["mano"][1] - t["mano"][7]))
-          for t in tri if np.isfinite(t["clicked"][[1, 7]]).all()]
+    pw = [(palm_width(t["clicked"]), palm_width(t["mano"])) for t in tri if palm_width(t["clicked"]) is not None]
     if pw:
         px, pm = np.array(pw).T
         lengths["palm"] = {"clicked_mm": float(np.median(px)), "mano_mm": float(np.median(pm)),

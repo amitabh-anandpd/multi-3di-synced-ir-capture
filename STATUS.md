@@ -1163,3 +1163,25 @@ to the nearest flip, -1 = none; `flip_dist()` in fit_mano.py), and `label_info.j
 "drop 0-1, consider <= 20" (1.5 % and 11.1 % of P02's frames). Existing P02 smoothed.npz files were patched with the
 same function (flip counts cross-checked against dataset.json: exact) and the P02 zips re-packed. P01's zips do not
 have the key (its sessions are in archive 1.zip; P01 has 6 flips); consumers must treat a missing key as unknown.
+
+## A new person's shape comes from clicks before the first fit (2026-11-21)
+
+P02 needed two Kaggle runs: fit with a guessed shape, click, refit the shape, fit again. Now:
+
+    python process.py --latest 13            # fuses; a person/hand with no shape and no clicks is held back
+    python tools/click_joints.py --person P03 --hand left --still --per 3
+    python process.py --no-fuse --latest 13  # shape from the clicks, then pack -> one Kaggle run
+
+- `tools/clicks3d.py`: the triangulation, camera transform and length/palm measures, moved out of `eval_clicks.py`
+  so both tools use one copy (eval_clicks output checked identical before/after, both P02 hands).
+- `tools/click_shape.py --person --hand [--fit]`: clicked finger lengths, thumb and palm width (median per
+  measurement, >= 5 moments each, exit 2 if fewer) and the `fit_mano.py --shape` command; reproduces eval_clicks'
+  clicked numbers exactly on P02.
+- `click_joints.py --person / --hand / --still`: before a fit, frames come from the fused clouds, minus those with
+  < 500 points that `pack()` drops, so the choices equal the frames the fit will label (checked on 3 sessions).
+- `process.py`: no shape -> `click_shape.py --fit`; too few clicks -> sessions held back with the exact click and
+  re-run commands; `--no-fuse` reuses fused clouds and the recorded rig gap.
+
+Tested on P02 left with its shape moved aside: without clicks the session was held back and nothing written; with
+clicks the shape came out at 2.06 mm surface fit (hand-run refit: 2.04 mm) and the session packed. The real shape and
+fit input were restored afterwards (fit input byte-identical).

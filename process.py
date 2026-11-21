@@ -6,9 +6,13 @@
   them, and a session whose notes name a different person or hand is refused. There is no default: a session
   packed as the wrong person or hand gets another hand's MANO shape (2026-11-20: two P02 takes came out as P01 left).
            --force                    (pack even if the rig check fails)
-  a new person or hand, e.g. after recording P02's right hand (still poses with "still" in the notes + motion):
-    python process.py --latest 13
-  fits shapes/P02_right.json from the still sessions first, then packs everything with it.
+  a new person or hand (still poses with "still" in the notes + motion), e.g. P03's left hand:
+    python process.py --latest 13            # fuses everything, then stops: P03 has no hand shape and no clicks
+    python tools/click_joints.py --person P03 --hand left --still --per 3      # ~30 frames, ~30 min
+    python process.py --no-fuse --latest 13  # shape from the clicks (tools/click_shape.py --fit), then packs
+  So a new person's shape comes from the clicks before the first fit, and the sessions go to Kaggle once. A shape is
+  never fitted without clicks unless --shape-without-clicks is given (2026-11-19: P02's ruler-constrained shape put
+  its fingers 3-10 mm short, and every label with it).
 
 Per session: pair_frames.py -> fps per camera -> fuse.py (every 3rd frame; every 2nd if the notes say "fast") ->
 rig check (same-surface gap between the two cameras' clouds <= 3 mm, else the cameras moved: recalibrate) ->
@@ -33,6 +37,10 @@ ap.add_argument("--latest", type=int, help="take the N newest sessions")
 ap.add_argument("--person", help="override the person named in the notes (e.g. P02)")
 ap.add_argument("--hand", choices=["left", "right"], help="override the hand named in the notes")
 ap.add_argument("--force", action="store_true", help="pack even when the rig check fails")
+ap.add_argument("--no-fuse", action="store_true",
+                help="reuse each session's existing fused clouds and rig check (after clicking): only shape + pack")
+ap.add_argument("--shape-without-clicks", action="store_true",
+                help="fit a missing hand shape from the point clouds alone (no clicks): only for a quick test")
 ap.add_argument("--refine", action="store_true",
                 help="let fuse.py correct the rig from the hand points (up to 6 deg / 20 mm; kept only if it lowers "
                      "the gap on frames it was not fitted to). For a hand held where the board was not: 2026-11-12 "
@@ -72,6 +80,20 @@ for s in sessions:
         continue
     who_of[s] = (person, hand)
     print(f"== {name}  '{notes}'  ({person} {hand})", flush=True)
+    row = dataset.load()["sessions"].get(name, {})
+    if args.no_fuse and os.path.exists(os.path.join(s, "fused", "hands.npz")) and row.get("rig_gap_mm") is not None:
+        gap = row["rig_gap_mm"]
+        ok = gap <= dataset.RIG_GAP_MAX
+        print(f"   already fused ({row.get('fused_frames')} frames); rig check: gap {gap} mm -> {'OK' if ok else 'FAILED'}")
+        dataset.update(s, person=person, hand=hand)
+        if not ok and not args.force:
+            print(f"   NOT packed: rig gap {gap} mm > {dataset.RIG_GAP_MAX} (use --force, or re-run without --no-fuse)")
+            failed.append(name)
+            continue
+        fused.append((s, t0))
+        continue
+    if args.no_fuse:
+        print("   not fused yet: fusing it now")
     out = subprocess.run([sys.executable, "pair_frames.py", s], capture_output=True, text=True)
     if out.returncode:
         print(out.stdout[-500:], out.stderr[-1500:])
@@ -113,22 +135,38 @@ for s in sessions:
         continue
     fused.append((s, t0))
 
-# a new person or hand: fit the MANO shape from this batch's still sessions first (fit_mano.py --shape, ~1-2 min).
-# One shape per person and hand, so a batch that mixes them gets each fitted from its own stills.
+# a new person or hand: fit the MANO shape first (~1-2 min), from the person's clicked joints (tools/click_shape.py).
+# One shape per person and hand, so a batch that mixes them gets each fitted from its own stills. Without enough
+# clicks the sessions of that person and hand are held back, not packed with a guessed shape.
+waiting = {}  # (person, hand) -> sessions held back until the hand is clicked
 for (person, hand) in sorted({who_of[s] for s, _ in fused}):
     shape = os.path.join("shapes", f"{person}_{hand}.json")
     if os.path.exists(shape):
         continue
-    still = [s for s, _ in fused if who_of[s] == (person, hand) and "still" in dataset.notes_of(s).lower()]
+    mine = [s for s, _ in fused if who_of[s] == (person, hand)]
+    still = [s for s in mine if "still" in dataset.notes_of(s).lower()]
     if not still:
         sys.exit(f"\nno hand shape {shape} yet, and none of these sessions is a still pose. Record 3-5 still poses "
                  f"(notes containing 'still', e.g. \"P02 fist still\") and run process.py on them together with these.")
-    print(f"\nno {shape} yet: fitting {person}'s {hand} hand shape from {len(still)} still sessions", flush=True)
-    out = subprocess.run([sys.executable, "fit_mano.py", "--shape", *still, "--person", person],
-                         capture_output=True, text=True)
-    print("\n".join(x for x in out.stdout.splitlines() if x.startswith(("shape", "MANO", "wrote"))) or out.stderr[-1500:])
+    if args.shape_without_clicks:
+        print(f"\nno {shape} yet: fitting {person}'s {hand} hand shape from {len(still)} still sessions WITHOUT "
+              f"clicks (--shape-without-clicks: finger lengths are not constrained)", flush=True)
+        out = subprocess.run([sys.executable, "fit_mano.py", "--shape", *still, "--person", person],
+                             capture_output=True, text=True)
+    else:
+        print(f"\nno {shape} yet: fitting {person}'s {hand} hand shape from the clicked joints", flush=True)
+        out = subprocess.run([sys.executable, "tools/click_shape.py", "--person", person, "--hand", hand, "--fit"],
+                             capture_output=True, text=True)
+        if out.returncode == 2 or "moments clicked" not in out.stdout or not os.path.exists(shape):
+            print(out.stdout.strip() or out.stderr[-1500:])
+            waiting[(person, hand)] = mine
+            continue
+    print("\n".join(x for x in out.stdout.splitlines()
+                    if x.startswith(("shape", "MANO", "palm", "wrote", "  ", "P"))) or out.stderr[-1500:])
     if not os.path.exists(shape):
         sys.exit(f"shape fit did not write {shape} (LeapC may call this hand the other side: check the notes)")
+held = {s for ss in waiting.values() for s in ss}
+fused = [(s, t0) for s, t0 in fused if s not in held]
 
 for s, t0 in fused:
     name = dataset.name_of(s)
@@ -143,6 +181,12 @@ for s, t0 in fused:
     print(f"   done in {(time.time() - t0) / 60:.1f} min", flush=True)
 
 print(f"\npacked {len(packed)}: {packed}" + (f"\nNOT packed {len(failed)}: {failed}" if failed else ""))
+for (person, hand), ss in waiting.items():
+    print(f"\nWAITING for clicks, {person} {hand} ({len(ss)} sessions fused, not packed): no hand shape yet, and it is "
+          f"fitted from clicked joints, not guessed. Click the still poses (~30 frames, skip any with fingers hidden):\n"
+          f"  python tools/click_joints.py --person {person} --hand {hand} --still --per 3\n"
+          f"then pack them (the fusing is reused):\n"
+          f"  python process.py --no-fuse {' '.join(ss)}")
 if packed:
     print("next: upload these fit_inputs/<session>.npz files as a Kaggle dataset, run fit_kaggle.ipynb, download "
           "params.zip into fit_inputs/, then: python finish.py")
