@@ -8,7 +8,7 @@
            --force                    (pack even if the rig check fails)
   a new person or hand (still poses with "still" in the notes + motion), e.g. P03's left hand:
     python process.py --latest 13            # fuses everything, then stops: P03 has no hand shape and no clicks
-    python tools/click_joints.py --person P03 --hand left --still --per 3      # ~30 frames, ~30 min
+    python tools/click_joints.py --person P03 --hand left --poses open spread --per 8   # 32 frames, ~30 min
     python process.py --no-fuse --latest 13  # shape from the clicks (tools/click_shape.py --fit), then packs
   So a new person's shape comes from the clicks before the first fit, and the sessions go to Kaggle once. A shape is
   never fitted without clicks unless --shape-without-clicks is given (2026-11-19: P02's ruler-constrained shape put
@@ -183,8 +183,8 @@ for s, t0 in fused:
 print(f"\npacked {len(packed)}: {packed}" + (f"\nNOT packed {len(failed)}: {failed}" if failed else ""))
 for (person, hand), ss in waiting.items():
     print(f"\nWAITING for clicks, {person} {hand} ({len(ss)} sessions fused, not packed): no hand shape yet, and it is "
-          f"fitted from clicked joints, not guessed. Click the still poses (~30 frames, skip any with fingers hidden):\n"
-          f"  python tools/click_joints.py --person {person} --hand {hand} --still --per 3\n"
+          f"fitted from clicked joints, not guessed. Click the open and spread stills (32 frames, ~30 min; skip any with fingers hidden):\n"
+          f"  python tools/click_joints.py --person {person} --hand {hand} --poses open spread --per 8\n"
           f"then pack them (the fusing is reused):\n"
           f"  python process.py --no-fuse {' '.join(ss)}")
 if packed:

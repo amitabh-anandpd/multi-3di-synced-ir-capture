@@ -3,7 +3,8 @@
   python tools/click_shape.py --person P03 --hand left           # measure, and print the shape-fit command
   python tools/click_shape.py --person P03 --hand left --fit     # measure and fit shapes/P03_left.json
 
-Clicks come from `python tools/click_joints.py --person P03 --hand left --still` (frames clicked in both cameras).
+Clicks come from `python tools/click_joints.py --person P03 --hand left --poses open spread --per 8` (frames clicked
+in both cameras; open and spread stills show every joint, so each moment gives all 6 measurements).
 Each moment is triangulated (tools/clicks3d.py); finger lengths (MCP / thumb CMC to tip) and palm width (index to
 little MCP) are medians over the moments where every joint of that measurement was clicked. These are the numbers
 fit_mano.py --shape takes as --click-lengths / --thumb-mm / --palm-mm.
@@ -64,7 +65,7 @@ for name in ("index", "middle", "ring", "little", "thumb", "palm"):
 if short:
     print(f"\ntoo few moments (need {args.min_moments}) for: {', '.join(short)}. Click more frames where these joints "
           f"are visible in BOTH cameras (open or spread hand):\n"
-          f"  python tools/click_joints.py --person {args.person} --hand {args.hand} --still --per 4")
+          f"  python tools/click_joints.py --person {args.person} --hand {args.hand} --poses open spread --per 12")
     sys.exit(2)
 
 stills = sorted(os.path.join("sessions", s) for s in mine if "still" in (rows[s].get("notes") or "").lower()

@@ -329,7 +329,7 @@ Rules learned, which every later step follows:
 5. A rigid camera base (P1's last item): the cameras moved twice in two days; each move costs a board and puts
    a sitting at risk.
 6. ~~Cut one Kaggle round per person~~ **done 2026-11-21**: `process.py` fuses, then holds a new person's sessions
-   until their stills are clicked (`click_joints.py --person P03 --hand left --still --per 3`, on fused frames, no
+   until their stills are clicked (`click_joints.py --person P03 --hand left --poses open spread --per 8`, on fused frames, no
    fit needed); `process.py --no-fuse` then fits the shape from the clicks (`tools/click_shape.py --fit`) and packs.
    One Kaggle run per person, and a shape is never fitted without clicks (`--shape-without-clicks` to override).
 7. Disk room for ~22 GB of raw per sitting: archive each person once their zips are verified on the Drive.

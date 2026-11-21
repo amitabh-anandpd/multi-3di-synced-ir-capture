@@ -1185,3 +1185,25 @@ P02 needed two Kaggle runs: fit with a guessed shape, click, refit the shape, fi
 Tested on P02 left with its shape moved aside: without clicks the session was held back and nothing written; with
 clicks the shape came out at 2.06 mm surface fit (hand-run refit: 2.04 mm) and the session packed. The real shape and
 fit input were restored afterwards (fit input byte-identical).
+
+## Faster clicking: what helps and what does not (2026-11-21)
+
+Measured on P02's clicks (scratch script; 1 px ~ 0.76 mm at the hand):
+
+- **LeapC-projected suggestions are not worth pre-filling.** 105 P02 frames: median 22 px from the click; 18 of 19
+  joints per frame are > 8 px off. Shifting the skeleton by one dragged anchor (middle MCP) leaves 17 of 19 to fix,
+  two anchors (wrist + middle MCP, similarity) the same: the error is per finger (LeapC's bone lengths change frame
+  to frame), not a shared offset. Dragging a joint costs about what clicking it does. MANO suggestions (after a fit)
+  are better (median 12-16 px, ~35-43 % within 10 px) but exist only after the first fit.
+- **How many moments a shape needs.** Redrawing subsets of P02's moments (p90 error of the median vs all): ~15
+  moments per measurement keep every length within ~3.5 mm, 20 within ~3 mm.
+- **Which poses to click.** Useful measurements per clicked moment (of 6): open still 6.0, spread still 5.8, edge
+  of view 5.0, ... fist 2.8, pinch 2.5, point 0.5, wrist rotation 0.1. Clicking all 5 stills at `--per 3` yields
+  ~9 samples per measurement; clicking only open + spread at `--per 8` (32 frames, the same time) yields ~16.
+
+Recommendation: click open and spread stills only, ~8 moments each; test MediaPipe-style 2D keypoints on the IR
+images against the same clicks before building any pre-fill; markers only in a separate, excluded session.
+
+Done (2026-11-21): `click_joints.py --poses open spread` (matches the notes "open still" / "spread still", so not
+"open close slow"); process.py, click_shape.py and PLAN.md now suggest `--poses open spread --per 8`: 32 frames per
+hand, checked on P02 (exactly its two open and two spread stills).

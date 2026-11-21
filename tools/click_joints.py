@@ -3,7 +3,7 @@
   python tools/click_joints.py                  # 2 frames per camera from every fitted session in dataset.json
   python tools/click_joints.py --per 3
   python tools/click_joints.py --list           # only show which frames would come up
-  python tools/click_joints.py --person P03 --hand left --still --per 3   # a new person, BEFORE the first fit:
+  python tools/click_joints.py --person P03 --hand left --poses open spread --per 8   # a new person, before the fit:
                                                 # then tools/click_shape.py --person P03 --hand left --fit
 
 Shows the rectified left IR image of one camera, zoomed on the hand. Click the joints in the order shown at the top:
@@ -50,6 +50,10 @@ ap.add_argument("--hand", choices=["left", "right"], help="with --person: only t
 ap.add_argument("--still", action="store_true",
                 help="only sessions whose notes say 'still': a new person's hand is measured from these BEFORE the "
                      "first fit (then tools/click_shape.py --fit). Skip (s) frames where fingers are hidden, e.g. a fist")
+ap.add_argument("--poses", nargs="+", metavar="POSE",
+                help="only these still poses, e.g. --poses open spread (notes containing 'open still' / 'spread "
+                     "still'). For measuring a hand: per clicked moment, open and spread give all 6 measurements, "
+                     "fist / pinch / point 0.5-2.8 (STATUS.md 2026-11-21), so click these with --per 8")
 ap.add_argument("--per", type=int, default=2, help="frames per session per camera")
 ap.add_argument("--switches", type=int, metavar="N",
                 help="PLAN.md P0: instead of --per, take up to N palm/back flips per session (orientation step > 90 deg "
@@ -65,11 +69,13 @@ args = ap.parse_args()
 sessions = args.sessions
 if not sessions:
     d = json.load(open("dataset.json"))["sessions"]
-    if args.person or args.hand or args.still:
+    if args.person or args.hand or args.still or args.poses:
         sessions = [s for s, r in sorted(d.items()) if not r.get("exclude")
                     and (not args.person or r.get("person") == args.person)
                     and (not args.hand or r.get("hand") == args.hand)
-                    and (not args.still or "still" in (r.get("notes") or "").lower())]
+                    and (not args.still or "still" in (r.get("notes") or "").lower())
+                    and (not args.poses or any(f"{p.lower()} still" in (r.get("notes") or "").lower()
+                                               for p in args.poses))]
     else:
         sessions = [s for s, r in d.items() if r.get("fit_frames") and os.path.exists(f"sessions/{s}/mano/smoothed.npz")]
 print(f"Loading frames from {len(sessions)} sessions...")
